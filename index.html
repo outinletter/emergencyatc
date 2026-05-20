@@ -11,9 +11,11 @@
   padding: 0;
 }
 body {
+  background: #F2F6FA;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   max-width: 480px;
   margin: 0 auto;
+  color: #101820;
   min-height: 100vh;
   display: flex;
   flex-direction: column;
@@ -78,14 +80,14 @@ input:checked + .slider:before {
 
 <script>
 var ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
-var LS_VIDEOS = "atc_videos_v6";
-var LS_UPDATE = "atc_lastupdate_v6";
+var LS_VIDEOS = "atc_videos_v7";
+var LS_UPDATE = "atc_lastupdate_v7";
 var LS_THEME = "atc_theme_v1";
 
 // Gemini API Key (empty string for runtime environment key Injection)
 const apiKey = "";
 
-// Category Definitions
+// Category Definitions (Added "etc" category)
 var CATEGORIES = [
   {id: "all", label: "All Categories"},
   {id: "engine", label: "Engine Failure"},
@@ -96,7 +98,8 @@ var CATEGORIES = [
   {id: "fuel", label: "Fuel Emergency"},
   {id: "bird", label: "Bird Strike"},
   {id: "gear", label: "Landing Gear"},
-  {id: "pressurization", label: "Pressurization"}
+  {id: "pressurization", label: "Pressurization"},
+  {id: "etc", label: "Other / Uncategorized"}
 ];
 
 var SEED = [
@@ -126,7 +129,8 @@ var SEED = [
   {id: 24, category: "gear", title: "FedEx Boeing 757 GEAR UP LANDING After Hydraulic failure. REAL ATC", channel: "Real ATC", views: "3.1M", duration: "32:00", isNew: false, ytId: "xtM_K3s_jcQ"},
   {id: 25, category: "gear", title: "LANDING GEAR MALFUNCTION — Emergency Landing at Los Angeles [ATC audio]", channel: "Air Traffic Visualised", views: "2.4M", duration: "28:45", isNew: false, ytId: "2oxVVCt_iAw"},
   {id: 26, category: "gear", title: "PAN-PAN. Gear problem. Swiss Airbus A330 returns to Kennedy. Real ATC", channel: "Real ATC", views: "1.8M", duration: "16:30", isNew: false, ytId: "SW1rZxtN5XE"},
-  {id: 27, category: "pressurization", title: "RAPID DESCENT After Losing Pressurization. REAL ATC", channel: "Real ATC", views: "2.8M", duration: "21:05", isNew: false, ytId: "RtptbpDd_FU"}
+  {id: 27, category: "pressurization", title: "RAPID DESCENT After Losing Pressurization. REAL ATC", channel: "Real ATC", views: "2.8M", duration: "21:05", isNew: false, ytId: "RtptbpDd_FU"},
+  {id: 28, category: "etc", title: "Cargo Door Indication Open | B747 Emergency Return to Anchorage", channel: "Aviation ATC HD", views: "510K", duration: "18:22", isNew: false}
 ];
 
 var DUMMY_NEW = [
@@ -138,7 +142,8 @@ var DUMMY_NEW = [
   {category: "fuel", title: "Low Fuel Advisory Over Pacific | United B787 Expedited Handling", channel: "ATC Global Live", views: "2.9M", duration: "17:35"},
   {category: "bird", title: "Geese Ingestion on Runway | Boeing 737 Rejected Takeoff", channel: "LiveATC Radio", views: "1.5M", duration: "11:50"},
   {category: "gear", title: "Left Main Gear Disagree | Low Approach Visual Tower Verification", channel: "Aviation ATC HD", views: "870K", duration: "24:30"},
-  {category: "pressurization", title: "Slow Decompression Warning | Flight Level 410 Precautionary Descent", channel: "ATC Global Live", views: "1.2M", duration: "20:02"}
+  {category: "pressurization", title: "Slow Decompression Warning | Flight Level 410 Precautionary Descent", channel: "ATC Global Live", views: "1.2M", duration: "20:02"},
+  {category: "etc", title: "Unknown Laser Illumination Event | Multiple Aircraft Go Around", channel: "Real ATC", views: "410K", duration: "12:11"}
 ];
 
 var ANALYSIS = {
@@ -348,6 +353,27 @@ var ANALYSIS = {
       {from: "PILOT", msg: "Direct Learmonth runway 18, Qantas 72. Cabin pressure has stabilized, leveled off at 10,000 feet. Oxygen masks are now removed."},
       {from: "ATC", msg: "Qantas 72, glad to hear. Radar indicates you are 45 miles northeast of Learmonth, proceed direct, altimeter 29.92."}
     ]
+  },
+  etc: {
+    summary: "This recording captures an unconventional or unclassified emergency event. The flight crew responded to a non-standard situation, coordinating closely with Air Traffic Control to ensure the safe resolution of the flight.",
+    pilotRoles: [
+      "Assess the unconventional situation using available instruments and CRM.",
+      "Declare an emergency or PAN-PAN as required to secure priority handling.",
+      "Work systematically through applicable non-normal checklists.",
+      "Clearly communicate intentions and requirements to ATC."
+    ],
+    atcRoles: [
+      "Acknowledge the non-standard emergency declaration and provide priority.",
+      "Clear airspace as necessary and coordinate with applicable ground units.",
+      "Assist the flight crew with requested information or vectors.",
+      "Maintain continuous monitoring until the aircraft is safely on the ground."
+    ],
+    dialogue: [
+      {from: "PILOT", msg: "MAYDAY, MAYDAY, MAYDAY, declaring an emergency due to an uncontained issue. Requesting immediate return."},
+      {from: "ATC", msg: "MAYDAY acknowledged. Turn left heading 180, descend and maintain 4,000. State your intentions."},
+      {from: "PILOT", msg: "Heading 180, descending 4,000. We need the longest runway available and emergency equipment standing by."},
+      {from: "ATC", msg: "Roger, expect runway 27. Emergency services are being alerted and positioned. Wind 250 at 15."}
+    ]
   }
 };
 
@@ -542,7 +568,27 @@ Explanation: Describing response conditions precisely ('mobilized at the field')
 
 STEP 3: Advanced alternative expressions
 Alternative: Qantas 72, structural integrity of the fuselage appears intact, maintaining high speed descent to 10,000 feet to escape the hypoxic environment.
-Alternative: Qantas 72, cabin altitude has returned to safe levels, emergency descent terminated, maintaining 10,000 feet.`
+Alternative: Qantas 72, cabin altitude has returned to safe levels, emergency descent terminated, maintaining 10,000 feet.`,
+
+  etc: `STEP 1: Reconstruct the conversation (Level 6)
+PILOT: MAYDAY, MAYDAY, MAYDAY. Regional 771, we are declaring an emergency due to an uncontained, non-standard system anomaly. Requesting priority handling and immediate vectors to the nearest suitable airport.
+ATC: Regional 771, Center, copy MAYDAY. Emergency is acknowledged. Turn right heading 030, descend and maintain flight level 180. State your fuel remaining and souls on board when able.
+PILOT: Right heading 030, descending to flight level 180, Regional 771. We have three hours of fuel remaining and 84 souls on board. Requesting the longest available runway and ARFF standby.
+ATC: Regional 771, Roger. Expect ILS Runway 09, length is 10,500 feet. Airport emergency response services are being mobilized. Contact Approach on 125.8.
+PILOT: Expect ILS Runway 09, contacting Approach on 125.8, Regional 771.
+
+STEP 2: Sentence-by-sentence correction
+Original: MAYDAY, MAYDAY, MAYDAY, declaring an emergency due to an uncontained issue. Requesting immediate return.
+Corrected: MAYDAY, MAYDAY, MAYDAY. Regional 771, we are declaring an emergency due to an uncontained, non-standard system anomaly. Requesting priority handling and immediate vectors to the nearest suitable airport.
+Explanation: For unclassified emergencies, explicitly stating 'uncontained, non-standard system anomaly' provides ATC with the understanding that standard QRH checklists may not fully cover the event, prompting maximum ATC flexibility.
+
+Original: MAYDAY acknowledged. Turn left heading 180, descend and maintain 4,000. State your intentions.
+Corrected: Regional 771, Center, copy MAYDAY. Emergency is acknowledged. Turn right heading 030, descend and maintain flight level 180. State your fuel remaining and souls on board when able.
+Explanation: Standardizes the ATC response to secure essential emergency data (fuel and souls) without rushing the flight crew, adhering to CRM best practices.
+
+STEP 3: Advanced alternative expressions
+Alternative: Regional 771, we are encountering multiple cascading system anomalies, unable to maintain RVSM, requesting an immediate block altitude and vectors for a precautionary landing.
+Alternative: Regional 771, non-normal checklist is in progress for an unclassified flight control issue, requesting a wide vector for a long final approach.`
 };
 
 // ── 3. Storage & State Management ──────────────────────────────
@@ -627,7 +673,7 @@ window.fetchNewVideos = function() {
   const payload = {
     contents: [{
       parts: [{
-        text: "Generate 9 new realistic aviation emergency YouTube video entries. Vary airlines, aircraft, and airports worldwide."
+        text: "Generate 9 new realistic aviation emergency YouTube video entries. Vary airlines, aircraft, and airports worldwide. For category, use one of: engine, medical, weather, fire, hydraulic, fuel, bird, gear, pressurization, or etc."
       }]
     }],
     generationConfig: {
@@ -667,11 +713,19 @@ window.fetchNewVideos = function() {
 function esc(s) {
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
-function getCat(id) {
-  return CATEGORIES.find(function(c) { return c.id === id; }) || {};
+
+function getValidCat(catId) {
+  const valid = ["engine", "medical", "weather", "fire", "hydraulic", "fuel", "bird", "gear", "pressurization", "etc"];
+  return valid.includes(catId) ? catId : "etc";
 }
+
+function getCat(id) {
+  var found = CATEGORIES.find(function(c) { return c.id === id; });
+  return found || CATEGORIES.find(function(c) { return c.id === "etc"; });
+}
+
 function getAn(c) {
-  return ANALYSIS[c] || ANALYSIS["engine"];
+  return ANALYSIS[c] || ANALYSIS["etc"] || ANALYSIS["engine"];
 }
 
 window.openYoutube = function(id) {
@@ -707,7 +761,7 @@ function icaoToHTML(text, colors) {
       var isPilot = /^PILOT/i.test(line);
       var msg = line.replace(/^(PILOT|ATC)\s*:\s*/i, "");
       html += '<div style="display:flex;flex-direction:' + (isPilot ? "row" : "row-reverse") + ';align-items:flex-end;gap:8px;margin-bottom:12px">'
-        + '<div style="flex-shrink:0;width:52px;height:26px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;background:' + (isPilot ? colors.N : colors.N + "18") + ';color:' + (isPilot ? W : colors.N) + ';border:1px solid ' + colors.N + '28">' + (isPilot ? "PILOT" : "ATC") + '</div>'
+        + '<div style="flex-shrink:0;width:52px;height:26px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;background:' + (isPilot ? colors.N : colors.N + "18") + ';color:' + (isPilot ? colors.W : colors.N) + ';border:1px solid ' + colors.N + '28">' + (isPilot ? "PILOT" : "ATC") + '</div>'
         + '<div style="max-width:82%;padding:10px 14px;border-radius:8px;font-size:15px;line-height:1.65;color:' + colors.T + ';background:' + (isPilot ? colors.N + "0c" : colors.G) + ';border:1px solid ' + colors.N + '18;border-bottom-' + (isPilot ? "left" : "right") + '-radius:2px">' + msg + '</div></div>';
     } else if (/^(Original|Corrected|Explanation|Alternative)\s*:/i.test(line)) {
       var color = colors.N;
@@ -773,14 +827,15 @@ function dialogueHTML(dialogue, colors) {
   return dialogue.map(function(line) {
     var isPilot = line.from === "PILOT";
     return '<div style="display:flex;flex-direction:' + (isPilot ? "row" : "row-reverse") + ';align-items:flex-end;gap:8px;margin-bottom:12px">'
-      + '<div style="flex-shrink:0;width:52px;height:26px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;letter-spacing:0.5px;background:' + (isPilot ? colors.N : colors.N + "18") + ';color:' + (isPilot ? W : colors.N) + ';border:1px solid ' + colors.N + '28">' + line.from + '</div>'
+      + '<div style="flex-shrink:0;width:52px;height:26px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;letter-spacing:0.5px;background:' + (isPilot ? colors.N : colors.N + "18") + ';color:' + (isPilot ? colors.W : colors.N) + ';border:1px solid ' + colors.N + '28">' + line.from + '</div>'
       + '<div style="max-width:78%;padding:11px 15px;border-radius:8px;font-size:15px;line-height:1.7;color:' + colors.T + ';background:' + (isPilot ? colors.N + "0c" : colors.G) + ';border:1px solid ' + colors.N + '18;border-bottom-' + (isPilot ? "left" : "right") + '-radius:2px">' + esc(line.msg) + '</div>'
       + '</div>';
   }).join("");
 }
 
 function cardHTML(v, colors) {
-  var c = getCat(v.category);
+  var validCat = getValidCat(v.category);
+  var c = getCat(validCat);
   var playBtn = v.ytId
     ? '<a href="https://www.youtube.com/watch?v=' + esc(v.ytId) + '" onclick="window.openYoutube(\'' + esc(v.ytId) + '\');return false;" style="display:inline-flex;align-items:center;gap:4px;background:' + colors.N + ';color:#fff;font-size:11px;font-weight:800;padding:4px 10px;border-radius:12px;text-decoration:none;letter-spacing:0.5px;vertical-align:middle;margin-left:8px;white-space:nowrap">PLAY</a>'
     : '';
@@ -794,11 +849,12 @@ function cardHTML(v, colors) {
 }
 
 function detailHTML(v, colors) {
-  var c = getCat(v.category);
-  var a = getAn(v.category);
+  var validCat = getValidCat(v.category);
+  var c = getCat(validCat);
+  var a = getAn(validCat);
   
   var icaoContent = "";
-  var catKey = v.category ? v.category.toLowerCase() : "";
+  var catKey = validCat.toLowerCase();
   if (catKey && ICAO_ANALYSIS_PRESETS[catKey]) {
     icaoContent = icaoToHTML(ICAO_ANALYSIS_PRESETS[catKey], colors);
   } else {
@@ -876,7 +932,8 @@ window.render = function() {
   document.body.style.color = colors.T;
 
   var filtered = s.videos.filter(function(v) {
-    return (s.cat === "all" || v.category === s.cat) &&
+    var vCat = getValidCat(v.category);
+    return (s.cat === "all" || vCat === s.cat) &&
       (s.search === "" || v.title.toLowerCase().indexOf(s.search.toLowerCase()) >= 0);
   });
   var activeCat = getCat(s.cat);
@@ -939,6 +996,7 @@ window.render = function() {
   } else if (s.selected) {
     html += detailHTML(s.selected, colors);
   } else {
+    // Show Last Sync Date & Sync Message on Home Screen List Header
     html += '<div style="font-size:13px;font-weight:600;color:' + colors.M + ';padding:14px 0 6px;display:flex;justify-content:space-between;border-bottom:1px solid ' + colors.B + '">'
       + '<span>' + filtered.length + ' emergency recordings</span>'
       + '<span>Last Sync: ' + lastDate + '</span>'
