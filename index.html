@@ -11,17 +11,54 @@
   padding: 0;
 }
 body {
-  background: #F0F4F8; /* Soft Aviation Grey */
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   max-width: 480px;
   margin: 0 auto;
-  color: #273746; /* Deep Charcoal */
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  transition: background-color 0.3s ease, color 0.3s ease;
 }
 ::-webkit-scrollbar {
   display: none;
+}
+
+/* Custom CSS Toggle Switch for Theme Settings */
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 46px;
+  height: 24px;
+}
+.switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+.slider {
+  position: absolute;
+  cursor: pointer;
+  top: 0; left: 0; right: 0; bottom: 0;
+  background-color: var(--border-color, #DDE5ED);
+  transition: .3s;
+  border-radius: 24px;
+}
+.slider:before {
+  position: absolute;
+  content: "";
+  height: 18px;
+  width: 18px;
+  left: 3px;
+  bottom: 3px;
+  background-color: white;
+  transition: .3s;
+  border-radius: 50%;
+}
+input:checked + .slider {
+  background-color: var(--primary-color, #427AA1);
+}
+input:checked + .slider:before {
+  transform: translateX(22px);
 }
 </style>
 <script>
@@ -40,21 +77,15 @@ body {
 <div id="app"></div>
 
 <script>
-// Aviation Professional Pastel Design System
-var N = "#6A8CAF", // Pastel Steel Blue (Primary)
-    W = "#ffffff", // White (Cards)
-    G = "#F0F4F8", // Soft Aviation Grey (Background)
-    T = "#273746", // Deep Charcoal (Primary Text)
-    M = "#8391A1"; // Steel Grey (Muted Text)
-
 var ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
-var LS_VIDEOS = "atc_videos_v5";
-var LS_UPDATE = "atc_lastupdate_v5";
+var LS_VIDEOS = "atc_videos_v6";
+var LS_UPDATE = "atc_lastupdate_v6";
+var LS_THEME = "atc_theme_v1";
 
 // Gemini API Key (empty string for runtime environment key Injection)
 const apiKey = "";
 
-// Category Definitions (Icons removed)
+// Category Definitions
 var CATEGORIES = [
   {id: "all", label: "All Categories"},
   {id: "engine", label: "Engine Failure"},
@@ -99,15 +130,15 @@ var SEED = [
 ];
 
 var DUMMY_NEW = [
-  {category: "engine", title: "Engine Stall Over Atlantic | B777 Emergency Divert to Azores", channel: "ATC Global Live", views: "1.3M", duration: "20:15"},
-  {category: "medical", title: "Passenger Aneurysm | KLM Declares PAN-PAN over North Sea", channel: "ATC Scandinavia", views: "540K", duration: "13:40"},
-  {category: "weather", title: "Hailstorm Encounter | Cockpit Windshield Cracked Emergency", channel: "WeatherATC Live", views: "890K", duration: "16:22"},
-  {category: "fire", title: "Wheel Well Fire on Landing | B787 Evacuated on Runway", channel: "ATC Global Live", views: "2.1M", duration: "11:55"},
-  {category: "hydraulic", title: "Flap Hydraulic Jam | A321 High Speed Approach Emergency", channel: "Aviation Radio HD", views: "430K", duration: "14:10"},
-  {category: "fuel", title: "Fuel Imbalance + Crossfeed Failure | MAYDAY Declared", channel: "ATC Global Live", views: "670K", duration: "17:30"},
-  {category: "bird", title: "Canada Goose Strike on Climb | Regional Jet Single Engine", channel: "WeatherATC Live", views: "760K", duration: "12:05"},
-  {category: "gear", title: "Main Gear Door Jammed | Extended Holding Burn-Off Fuel", channel: "Aviation Radio HD", views: "340K", duration: "22:50"},
-  {category: "pressurization", title: "Outflow Valve Runaway | Pressurization Surge Emergency", channel: "ATC Scandinavia", views: "1.1M", duration: "18:35"}
+  {category: "engine", title: "Turboprop Compressor Stall on Climb | Q400 Declares Emergency", channel: "Aviation ATC HD", views: "1.1M", duration: "14:15"},
+  {category: "medical", title: "Unconscious First Officer | Delta Diverts to Chicago O'Hare", channel: "ATC Global Live", views: "3.2M", duration: "26:40"},
+  {category: "weather", title: "Severe Clear Air Turbulence | FL370 Boeing 777 Injury Alert", channel: "LiveATC Radio", views: "980K", duration: "19:12"},
+  {category: "fire", title: "Cargo Smoke Indication | FedEx MD-11 Emergency Landing Memphis", channel: "Aviation ATC HD", views: "2.4M", duration: "22:05"},
+  {category: "hydraulic", title: "Dual Hydraulic System Leak | A350 Alternate Gear Gravity Drop", channel: "ATC Global Live", views: "1.8M", duration: "30:45"},
+  {category: "fuel", title: "Low Fuel Advisory Over Pacific | United B787 Expedited Handling", channel: "ATC Global Live", views: "2.9M", duration: "17:35"},
+  {category: "bird", title: "Geese Ingestion on Runway | Boeing 737 Rejected Takeoff", channel: "LiveATC Radio", views: "1.5M", duration: "11:50"},
+  {category: "gear", title: "Left Main Gear Disagree | Low Approach Visual Tower Verification", channel: "Aviation ATC HD", views: "870K", duration: "24:30"},
+  {category: "pressurization", title: "Slow Decompression Warning | Flight Level 410 Precautionary Descent", channel: "ATC Global Live", views: "1.2M", duration: "20:02"}
 ];
 
 var ANALYSIS = {
@@ -514,13 +545,12 @@ Alternative: Qantas 72, structural integrity of the fuselage appears intact, mai
 Alternative: Qantas 72, cabin altitude has returned to safe levels, emergency descent terminated, maintaining 10,000 feet.`
 };
 
-// ── Local Storage Cache System ─────────────────────────────
+// ── 3. Storage & State Management ──────────────────────────────
 function loadVideos(){try{var s=localStorage.getItem(LS_VIDEOS);return s?JSON.parse(s):null;}catch(e){return null;}}
 function saveVideos(v){try{localStorage.setItem(LS_VIDEOS,JSON.stringify(v));}catch(e){}}
 function loadLastUpdate(){try{var s=localStorage.getItem(LS_UPDATE);return s?parseInt(s):0;}catch(e){return 0;}}
 function saveLastUpdate(ts){try{localStorage.setItem(LS_UPDATE,String(ts));}catch(e){}}
 
-// ── Application State ──────────────────────────────────
 var state = {
   videos: loadVideos() || SEED,
   lastUpdate: loadLastUpdate(),
@@ -532,9 +562,11 @@ var state = {
   updating: false,
   justUpdated: false,
   scrollY: 0,
+  settingsOpen: false,
+  theme: "light"
 };
 
-// ── Gemini API Fetch Helper with Exponential Backoff ──────────────────
+// ── 4. API & Fetch Logic ──────────────────────────────
 function geminiFetch(payload, retries = 5, delay = 1000) {
   const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${apiKey}`;
   return fetch(url, {
@@ -565,15 +597,15 @@ function geminiFetch(payload, retries = 5, delay = 1000) {
   });
 }
 
-function setState(patch) {
+// 명시적 전역 스코프(window) 할당으로 ReferenceError 호이스팅 이슈 원천 차단
+window.setState = function(patch) {
   Object.assign(state, patch);
   var goY = (patch.selected === null && patch._restoreY !== undefined) ? patch._restoreY : null;
-  render();
+  window.render();
   if (goY !== null) window.scrollTo({ top: goY, behavior: "instant" });
-}
+};
 
-// ── Dynamic Video Additions (Structured JSON via Gemini) ──────────────────
-function addNewVideos(entries) {
+window.addNewVideos = function(entries) {
   var existing = state.videos;
   var maxId = existing.reduce(function(m, v) { return Math.max(m, v.id); }, 0);
   var updated = entries.map(function(v, i) {
@@ -584,13 +616,13 @@ function addNewVideos(entries) {
   var now = Date.now();
   saveVideos(updated);
   saveLastUpdate(now);
-  setState({ videos: updated, lastUpdate: now, updating: false, justUpdated: true });
-  setTimeout(function() { setState({ justUpdated: false }); }, 4000);
-}
+  window.setState({ videos: updated, lastUpdate: now, updating: false, justUpdated: true });
+  setTimeout(function() { window.setState({ justUpdated: false }); }, 4000);
+};
 
-function fetchNewVideos() {
+window.fetchNewVideos = function() {
   if (state.updating) return;
-  setState({ updating: true });
+  window.setState({ updating: true });
 
   const payload = {
     contents: [{
@@ -621,19 +653,17 @@ function fetchNewVideos() {
     .then(function(data) {
       var text = data.candidates?.[0]?.content?.parts?.[0]?.text;
       if (text) {
-        addNewVideos(JSON.parse(text));
+        window.addNewVideos(JSON.parse(text));
       } else {
-        addNewVideos(DUMMY_NEW);
+        window.addNewVideos(DUMMY_NEW);
       }
     })
     .catch(function() {
-      addNewVideos(DUMMY_NEW);
+      window.addNewVideos(DUMMY_NEW);
     });
-}
+};
 
-if ((Date.now() - state.lastUpdate) >= ONE_WEEK) fetchNewVideos();
-
-// ── Text Escape and Utilities ──────────────────────────────────────────
+// ── 5. Utilities ──────────────────────────────────────────
 function esc(s) {
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
 }
@@ -644,7 +674,6 @@ function getAn(c) {
   return ANALYSIS[c] || ANALYSIS["engine"];
 }
 
-// ── YouTube App Deep Linking Intent ──────────────────────────────────
 window.openYoutube = function(id) {
   var web = "https://www.youtube.com/watch?v=" + id;
   if (/iPhone|iPad|iPod/.test(navigator.userAgent)) {
@@ -658,198 +687,264 @@ window.openYoutube = function(id) {
   }
 };
 
-// ── ICAO Level 6 HTML Parser ──────────────────────
-function icaoToHTML(text) {
+// ── 6. ICAO Level 6 HTML Parser ──────────────────────
+function icaoToHTML(text, colors) {
   if (!text) return "";
   text = text.replace(/ICAO Level 6 Aviation English[^\n]*\n?/gi, "");
   text = text.replace(/PAN PAN PAN/gi, "PAN PAN");
   var lines = text.split("\n");
-  var html = '<div style="font-size:14px;line-height:1.75;color:' + T + '">';
+  var html = '<div style="font-size:15px;line-height:1.75;color:' + colors.T + '">';
   lines.forEach(function(raw) {
     var line = raw.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
     line = line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
     if (/^#{1,3}\s/.test(line) || /^STEP\s*[123]/i.test(line)) {
-      html += '<div style="font-size:14px;font-weight:800;color:' + N + ';letter-spacing:0.8px;text-transform:uppercase;margin:24px 0 12px;padding-bottom:6px;border-bottom:1.5px solid ' + N + '">' + line.replace(/^#{1,3}\s*/, "") + '</div>';
+      html += '<div style="font-size:15px;font-weight:800;color:' + colors.N + ';letter-spacing:0.8px;text-transform:uppercase;margin:24px 0 12px;padding-bottom:6px;border-bottom:1.5px solid ' + colors.N + '">' + line.replace(/^#{1,3}\s*/, "") + '</div>';
     } else if (/^[\*\-]\s/.test(line)) {
       html += '<div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:8px">'
-        + '<div style="width:5px;height:5px;border-radius:1px;background:' + N + ';flex-shrink:0;margin-top:9px"></div>'
+        + '<div style="width:5px;height:5px;border-radius:1px;background:' + colors.N + ';flex-shrink:0;margin-top:9px"></div>'
         + '<span>' + line.replace(/^[\*\-]\s/, "") + '</span></div>';
     } else if (/^(PILOT|ATC)\s*:/i.test(line)) {
       var isPilot = /^PILOT/i.test(line);
       var msg = line.replace(/^(PILOT|ATC)\s*:\s*/i, "");
       html += '<div style="display:flex;flex-direction:' + (isPilot ? "row" : "row-reverse") + ';align-items:flex-end;gap:8px;margin-bottom:12px">'
-        + '<div style="flex-shrink:0;width:52px;height:26px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;background:' + (isPilot ? N : N + "18") + ';color:' + (isPilot ? W : N) + ';border:1px solid ' + N + '28">' + (isPilot ? "PILOT" : "ATC") + '</div>'
-        + '<div style="max-width:82%;padding:10px 14px;border-radius:8px;font-size:14px;line-height:1.6;color:' + T + ';background:' + (isPilot ? N + "0c" : G) + ';border:1px solid ' + N + '18;border-bottom-' + (isPilot ? "left" : "right") + '-radius:2px">' + msg + '</div></div>';
+        + '<div style="flex-shrink:0;width:52px;height:26px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:10px;font-weight:700;background:' + (isPilot ? colors.N : colors.N + "18") + ';color:' + (isPilot ? W : colors.N) + ';border:1px solid ' + colors.N + '28">' + (isPilot ? "PILOT" : "ATC") + '</div>'
+        + '<div style="max-width:82%;padding:10px 14px;border-radius:8px;font-size:15px;line-height:1.65;color:' + colors.T + ';background:' + (isPilot ? colors.N + "0c" : colors.G) + ';border:1px solid ' + colors.N + '18;border-bottom-' + (isPilot ? "left" : "right") + '-radius:2px">' + msg + '</div></div>';
     } else if (/^(Original|Corrected|Explanation|Alternative)\s*:/i.test(line)) {
-      var color = N;
-      if (line.indexOf("Original") >= 0) color = "#85929E"; // Modified to pastel aviation tone
-      if (line.indexOf("Explanation") >= 0) color = "#52BE80"; // Modified to pastel aviation tone
-      html += '<div style="font-size:12px;font-weight:700;color:' + color + ';letter-spacing:0.5px;margin:12px 0 4px;text-transform:uppercase">' + line + '</div>';
+      var color = colors.N;
+      if (line.indexOf("Original") >= 0) color = "#73808C";
+      if (line.indexOf("Explanation") >= 0) color = "#2E7D32";
+      html += '<div style="font-size:13px;font-weight:700;color:' + color + ';letter-spacing:0.5px;margin:12px 0 4px;text-transform:uppercase">' + line + '</div>';
     } else if (line.trim() === "") {
       html += '<div style="height:6px"></div>';
     } else {
-      html += '<p style="margin-bottom:8px; font-size: 14px;">' + line + '</p>';
+      html += '<p style="margin-bottom:8px; font-size: 15px;">' + line + '</p>';
     }
   });
   html += '</div>';
   return html;
 }
 
-// ── UI Rendering Templates ───────────────────────────────────────
-function secLabel(label) {
-  return '<div style="display:flex;align-items:center;margin-bottom:14px;padding-bottom:8px;border-bottom:1.5px solid ' + N + '">'
-    + '<span style="font-size:14px;font-weight:700;color:' + N + ';letter-spacing:0.8px;text-transform:uppercase">' + label + '</span></div>';
+// ── 7. Theme Colors ───────────────────────────────────────
+function getColors() {
+  if (state.theme === "dark") {
+    return {
+      N: "#5C93C4", 
+      W: "#1E293B", 
+      G: "#0F172A", 
+      T: "#F8FAFC", 
+      M: "#94A3B8", 
+      B: "#334155"  
+    };
+  } else {
+    return {
+      N: "#427AA1", 
+      W: "#ffffff", 
+      G: "#F2F6FA", 
+      T: "#101820", 
+      M: "#4B5563", 
+      B: "#DDE5ED"  
+    };
+  }
 }
 
-function rolesHTML(pilotRoles, atcRoles) {
+// ── 8. UI Rendering Templates ───────────────────────────────────────
+function secLabel(label, colors) {
+  return '<div style="display:flex;align-items:center;margin-bottom:14px;padding-bottom:8px;border-bottom:1.5px solid ' + colors.N + '">'
+    + '<span style="font-size:15px;font-weight:800;color:' + colors.N + ';letter-spacing:0.8px;text-transform:uppercase">' + label + '</span></div>';
+}
+
+function rolesHTML(pilotRoles, atcRoles, colors) {
   function block(label, items) {
-    return '<div style="border-radius:8px;padding:14px 16px;background:' + N + '0a;border:1px solid ' + N + '22;margin-bottom:12px">'
-      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid ' + N + '18">'
-      + '<div style="width:9px;height:9px;border-radius:2px;background:' + N + '"></div>'
-      + '<span style="font-size:13px;font-weight:700;color:' + N + ';letter-spacing:1px">' + label + '</span></div>'
+    return '<div style="border-radius:8px;padding:14px 16px;background:' + colors.N + '0a;border:1px solid ' + colors.N + '22;margin-bottom:12px">'
+      + '<div style="display:flex;align-items:center;gap:8px;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid ' + colors.N + '18">'
+      + '<div style="width:9px;height:9px;border-radius:2px;background:' + colors.N + '"></div>'
+      + '<span style="font-size:14px;font-weight:800;color:' + colors.N + ';letter-spacing:1px">' + label + '</span></div>'
       + '<ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:10px">'
       + items.slice(0, 4).map(function(item) {
         return '<li style="display:flex;gap:10px;align-items:flex-start">'
-          + '<div style="width:5px;height:5px;border-radius:1px;background:' + N + ';flex-shrink:0;margin-top:9px"></div>'
-          + '<span style="font-size:14px;line-height:1.65;color:' + T + '">' + esc(item) + '</span></li>';
+          + '<div style="width:5px;height:5px;border-radius:1px;background:' + colors.N + ';flex-shrink:0;margin-top:9px"></div>'
+          + '<span style="font-size:15px;line-height:1.7;color:' + colors.T + '">' + esc(item) + '</span></li>';
       }).join("") + '</ul></div>';
   }
   return block("PILOT ROLES", pilotRoles) + block("ATC ROLES", atcRoles);
 }
 
-function dialogueHTML(dialogue) {
+function dialogueHTML(dialogue, colors) {
   return dialogue.map(function(line) {
     var isPilot = line.from === "PILOT";
     return '<div style="display:flex;flex-direction:' + (isPilot ? "row" : "row-reverse") + ';align-items:flex-end;gap:8px;margin-bottom:12px">'
-      + '<div style="flex-shrink:0;width:52px;height:26px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;letter-spacing:0.5px;background:' + (isPilot ? N : N + "18") + ';color:' + (isPilot ? W : N) + ';border:1px solid ' + N + '28">' + line.from + '</div>'
-      + '<div style="max-width:78%;padding:11px 15px;border-radius:8px;font-size:14px;line-height:1.65;color:' + T + ';background:' + (isPilot ? N + "0c" : G) + ';border:1px solid ' + N + '18;border-bottom-' + (isPilot ? "left" : "right") + '-radius:2px">' + esc(line.msg) + '</div>'
+      + '<div style="flex-shrink:0;width:52px;height:26px;border-radius:4px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;letter-spacing:0.5px;background:' + (isPilot ? colors.N : colors.N + "18") + ';color:' + (isPilot ? W : colors.N) + ';border:1px solid ' + colors.N + '28">' + line.from + '</div>'
+      + '<div style="max-width:78%;padding:11px 15px;border-radius:8px;font-size:15px;line-height:1.7;color:' + colors.T + ';background:' + (isPilot ? colors.N + "0c" : colors.G) + ';border:1px solid ' + colors.N + '18;border-bottom-' + (isPilot ? "left" : "right") + '-radius:2px">' + esc(line.msg) + '</div>'
       + '</div>';
   }).join("");
 }
 
-function cardHTML(v) {
+function cardHTML(v, colors) {
   var c = getCat(v.category);
   var playBtn = v.ytId
-    ? '<a href="https://www.youtube.com/watch?v=' + esc(v.ytId) + '" onclick="openYoutube(\'' + esc(v.ytId) + '\');return false;" style="display:inline-flex;align-items:center;gap:4px;background:' + N + ';color:#fff;font-size:10px;font-weight:700;padding:3px 8px;border-radius:10px;text-decoration:none;letter-spacing:0.5px;vertical-align:middle;margin-left:6px;white-space:nowrap">PLAY</a>'
+    ? '<a href="https://www.youtube.com/watch?v=' + esc(v.ytId) + '" onclick="window.openYoutube(\'' + esc(v.ytId) + '\');return false;" style="display:inline-flex;align-items:center;gap:4px;background:' + colors.N + ';color:#fff;font-size:11px;font-weight:800;padding:4px 10px;border-radius:12px;text-decoration:none;letter-spacing:0.5px;vertical-align:middle;margin-left:8px;white-space:nowrap">PLAY</a>'
     : '';
-  return '<div style="padding:14px 0;border-bottom:1px solid #DDE5ED">'
-    + '<div onclick="showDetail(' + v.id + ')" style="cursor:pointer">'
-    + '<div style="display:inline-flex;align-items:center;gap:4px;font-size:11px;font-weight:700;color:' + N + ';background:' + N + '20;padding:4px 10px;border-radius:4px;margin-bottom:8px;">' + (c.label || "") + '</div>'
-    + '<div style="font-size:14px;font-weight:600;line-height:1.5;color:' + T + ';margin-bottom:7px">' + esc(v.title) + playBtn + '</div>'
-    + '<div style="font-size:12px;color:' + M + '">' + esc(v.channel) + ' · ' + esc(v.views) + ' views</div>'
+  var isNewBadge = v.isNew ? '<span style="background:#E74C3C;color:#fff;font-size:9px;font-weight:800;padding:2px 6px;border-radius:10px;margin-left:8px;letter-spacing:0.5px;vertical-align:middle;">NEW</span>' : '';
+  return '<div style="padding:16px 0;border-bottom:1px solid ' + colors.B + '">'
+    + '<div onclick="window.showDetail(' + v.id + ')" style="cursor:pointer">'
+    + '<div style="display:inline-flex;align-items:center;gap:4px;font-size:12px;font-weight:800;color:' + colors.N + ';background:' + colors.N + '1A;padding:4px 10px;border-radius:4px;margin-bottom:8px;letter-spacing:0.5px;">' + (c.label || "") + '</div>' + isNewBadge
+    + '<div style="font-size:15px;font-weight:700;line-height:1.5;color:' + colors.T + ';margin-bottom:8px">' + esc(v.title) + playBtn + '</div>'
+    + '<div style="font-size:13px;font-weight:500;color:' + colors.M + '">' + esc(v.channel) + ' · ' + esc(v.views) + ' views</div>'
     + '</div></div>';
 }
 
-function detailHTML(v) {
+function detailHTML(v, colors) {
   var c = getCat(v.category);
   var a = getAn(v.category);
   
-  // Render Deep Analysis Synchronously
   var icaoContent = "";
   var catKey = v.category ? v.category.toLowerCase() : "";
   if (catKey && ICAO_ANALYSIS_PRESETS[catKey]) {
-    icaoContent = icaoToHTML(ICAO_ANALYSIS_PRESETS[catKey]);
+    icaoContent = icaoToHTML(ICAO_ANALYSIS_PRESETS[catKey], colors);
   } else {
-    icaoContent = '<div style="color:#CD6155;font-size:14px;padding:12px 0;text-align:center">No analysis available.</div>';
+    icaoContent = '<div style="color:#D32F2F;font-size:15px;font-weight:600;padding:12px 0;text-align:center">No pre-analyzed scenario available.</div>';
   }
 
   var playBtn = v.ytId
-    ? '<a href="https://www.youtube.com/watch?v=' + esc(v.ytId) + '" onclick="openYoutube(\'' + esc(v.ytId) + '\');return false;" style="display:inline-flex;align-items:center;gap:8px;background:' + N + ';color:#fff;font-size:14px;font-weight:800;padding:10px 24px;border-radius:28px;text-decoration:none;letter-spacing:1px;margin-bottom:24px;box-shadow: 0 4px 12px rgba(106,140,175,0.2)">WATCH REAL ATC VIDEO</a>'
+    ? '<a href="https://www.youtube.com/watch?v=' + esc(v.ytId) + '" onclick="window.openYoutube(\'' + esc(v.ytId) + '\');return false;" style="display:inline-flex;align-items:center;gap:8px;background:' + colors.N + ';color:#fff;font-size:15px;font-weight:800;padding:12px 28px;border-radius:30px;text-decoration:none;letter-spacing:1px;margin-bottom:28px;box-shadow: 0 4px 12px rgba(66,122,161,0.25)">WATCH REAL ATC VIDEO</a>'
     : '';
   return '<div style="padding-bottom:48px">'
-    + '<button onclick="setState({selected:null,_restoreY:state.scrollY||0});" style="display:flex;align-items:center;gap:6px;font-size:14px;color:' + N + ';background:none;border:none;cursor:pointer;padding:12px 0;font-weight:600">BACK TO LIST</button>'
+    + '<button onclick="window.setState({selected:null,_restoreY:state.scrollY||0});" style="display:flex;align-items:center;gap:6px;font-size:15px;color:' + colors.N + ';background:none;border:none;cursor:pointer;padding:14px 0;font-weight:800;letter-spacing:0.5px;">← BACK TO LIST</button>'
     + '<div>'
-    + '<div style="display:inline-flex;align-items:center;gap:5px;font-size:12px;font-weight:700;color:' + N + ';background:' + N + '20;padding:4px 12px;border-radius:4px;margin-bottom:9px;">' + (c.label || "") + '</div>'
-    + '<div style="font-size:18px;font-weight:700;color:' + T + ';line-height:1.4;margin-bottom:6px">' + esc(v.title) + '</div>'
-    + '<div style="font-size:13px;color:' + M + ';margin-bottom:16px">' + esc(v.channel) + ' · ' + esc(v.views) + ' views</div>'
+    + '<div style="display:inline-flex;align-items:center;gap:5px;font-size:13px;font-weight:800;color:' + colors.N + ';background:' + colors.N + '1A;padding:4px 12px;border-radius:4px;margin-bottom:10px;letter-spacing:0.5px;">' + (c.label || "") + '</div>'
+    + '<div style="font-size:20px;font-weight:800;color:' + colors.T + ';line-height:1.4;margin-bottom:8px">' + esc(v.title) + '</div>'
+    + '<div style="font-size:14px;font-weight:500;color:' + colors.M + ';margin-bottom:20px">' + esc(v.channel) + ' · ' + esc(v.views) + ' views</div>'
     + playBtn
     + '</div>'
-    + secLabel("SUMMARY")
-    + a.summary.split("\n\n").map(function(p) { return '<p style="font-size:14px;line-height:1.75;color:' + T + ';margin-bottom:14px">' + esc(p) + '</p>'; }).join("")
-    + '<div style="border-top:1px solid #DDE5ED;margin:24px 0"></div>'
-    + secLabel("FAA Response Standards & Roles")
-    + rolesHTML(a.pilotRoles, a.atcRoles)
-    + '<div style="border-top:1px solid #DDE5ED;margin:24px 0"></div>'
-    + secLabel("ATC Radio Dialogue")
-    + dialogueHTML(a.dialogue)
-    + '<div style="border-top:1px solid #DDE5ED;margin:24px 0"></div>'
-    + secLabel("ICAO L6 Deep Analysis")
+    + secLabel("SUMMARY", colors)
+    + a.summary.split("\n\n").map(function(p) { return '<p style="font-size:15px;line-height:1.75;color:' + colors.T + ';margin-bottom:14px">' + esc(p) + '</p>'; }).join("")
+    + '<div style="border-top:1px solid ' + colors.B + ';margin:28px 0"></div>'
+    + secLabel("FAA Response Standards & Roles", colors)
+    + rolesHTML(a.pilotRoles, a.atcRoles, colors)
+    + '<div style="border-top:1px solid ' + colors.B + ';margin:28px 0"></div>'
+    + secLabel("ATC Radio Dialogue", colors)
+    + dialogueHTML(a.dialogue, colors)
+    + '<div style="border-top:1px solid ' + colors.B + ';margin:28px 0"></div>'
+    + secLabel("ICAO L6 Deep Analysis", colors)
     + '<div id="icao-body-' + v.id + '">' + icaoContent + '</div>'
-    + '<div style="border-top:1px solid #DDE5ED;margin:32px 0 8px"></div>'
-    + '<button onclick="setState({selected:null,_restoreY:state.scrollY||0});" style="display:flex;align-items:center;gap:6px;font-size:14px;color:' + N + ';background:none;border:none;cursor:pointer;padding:0 0 16px 0;font-weight:600">BACK TO LIST</button>'
+    + '<div style="border-top:1px solid ' + colors.B + ';margin:36px 0 12px"></div>'
+    + '<button onclick="window.setState({selected:null,_restoreY:state.scrollY||0});" style="display:flex;align-items:center;gap:6px;font-size:15px;color:' + colors.N + ';background:none;border:none;cursor:pointer;padding:0 0 16px 0;font-weight:800;letter-spacing:0.5px;">← BACK TO LIST</button>'
     + '</div>';
 }
 
-// ── Application Main Rendering ──────────────────────────────────
-function render() {
+function settingsHTML(colors) {
+  var lastDate = state.lastUpdate > 0 ? new Date(state.lastUpdate).toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : "Never";
+  return '<div style="padding-bottom:48px">'
+    + '<button onclick="window.setState({settingsOpen:false});" style="display:flex;align-items:center;gap:6px;font-size:15px;color:' + colors.N + ';background:none;border:none;cursor:pointer;padding:14px 0;font-weight:800;letter-spacing:0.5px;">← CLOSE SETTINGS</button>'
+    
+    + secLabel("THEME SETTINGS", colors)
+    + '<div style="display:flex;justify-content:space-between;align-items:center;padding:16px 0;border-bottom:1px solid ' + colors.B + ';margin-bottom:24px;">'
+    + '  <div>'
+    + '    <div style="font-size:15px;font-weight:700;color:' + colors.T + ';">Dark Mode Theme</div>'
+    + '    <div style="font-size:12px;color:' + colors.M + ';margin-top:2px;">Adjust interface for low-light cockpits</div>'
+    + '  </div>'
+    + '  <label class="switch">'
+    + '    <input type="checkbox" id="themeToggle" onchange="window.toggleTheme()" ' + (state.theme === 'dark' ? 'checked' : '') + ' />'
+    + '    <span class="slider"></span>'
+    + '  </label>'
+    + '</div>'
+
+    + secLabel("DATABASE MANAGEMENT", colors)
+    + '<div style="padding:16px;background:' + colors.N + '0c;border-radius:8px;border:1px solid ' + colors.N + '33;margin-bottom:24px;">'
+    + '  <div style="font-size:14px;font-weight:600;color:' + colors.T + ';margin-bottom:8px;">YouTube Archive Synced</div>'
+    + '  <div style="font-size:13px;color:' + colors.M + ';margin-bottom:16px;">Last Sync Date: <strong>' + lastDate + '</strong></div>'
+    + '  <button onclick="window.triggerManualUpdate()" style="background:' + colors.N + ';color:#fff;border:none;padding:10px 20px;border-radius:6px;font-size:13px;font-weight:700;cursor:pointer;width:100%;transition:opacity 0.2s;">' + (state.updating ? "UPDATING ARCHIVE..." : "CHECK FOR UPDATES NOW") + '</button>'
+    + '</div>'
+
+    + secLabel("ABOUT", colors)
+    + '<div style="font-size:14px;line-height:1.6;color:' + colors.T + ';display:flex;flex-direction:column;gap:12px;">'
+    + '  <p>This emergency ATC database acts as a specialized training companion for commercial flight crews preparing for high-proficiency ICAO Level 6 examinations.</p>'
+    + '  <p>All emergency scenarios and correction templates strictly adhere to US FAA Aeronautical Information Manual (AIM) communications standards.</p>'
+    + '</div>'
+    + '</div>';
+}
+
+// ── 9. Main Application Rendering ──────────────────────────────────
+window.render = function() {
   var s = state;
+  var colors = getColors();
+
+  // Update dynamic CSS variables for theme switchers to render beautifully
+  document.documentElement.style.setProperty('--primary-color', colors.N);
+  document.documentElement.style.setProperty('--border-color', colors.B);
+  document.body.style.background = colors.G;
+  document.body.style.color = colors.T;
+
   var filtered = s.videos.filter(function(v) {
     return (s.cat === "all" || v.category === s.cat) &&
       (s.search === "" || v.title.toLowerCase().indexOf(s.search.toLowerCase()) >= 0);
   });
   var activeCat = getCat(s.cat);
-  var lastDate = s.lastUpdate > 0 ? new Date(s.lastUpdate).toLocaleDateString("en-US") : "";
+  var lastDate = s.lastUpdate > 0 ? new Date(s.lastUpdate).toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) : "Never";
   var html = "";
 
   // Upper Navigation Header
-  html += '<div style="background:' + N + ';padding:0 16px;position:fixed;top:0;left:0;right:0;max-width:480px;margin:0 auto;z-index:30;box-shadow: 0 2px 8px rgba(106,140,175,0.15)">'
-    + '<div style="display:flex;align-items:center;justify-content:space-between;height:56px">'
-    + '<button onclick="setState({showSearch:!state.showSearch})" style="background:none;border:none;cursor:pointer;color:#fff;font-size:14px;font-weight:600;padding:6px;opacity:0.9">SEARCH</button>'
-    + '<div onclick="setState({cat:\'all\',selected:null,search:\'\',showSearch:false});window.scrollTo({top:0,behavior:\'instant\'});" style="display:flex;flex-direction:column;align-items:center;cursor:pointer">'
+  html += '<div style="background:' + colors.N + ';padding:0 16px;position:fixed;top:0;left:0;right:0;max-width:480px;margin:0 auto;z-index:30;box-shadow: 0 2px 8px rgba(0,0,0,0.1)">'
+    + '<div style="display:flex;align-items:center;justify-content:space-between;height:60px">'
+    + '<button onclick="window.setState({showSearch:!state.showSearch,settingsOpen:false})" style="background:none;border:none;cursor:pointer;color:#fff;font-size:13px;font-weight:700;padding:8px;opacity:0.95;letter-spacing:0.5px;">SEARCH</button>'
+    + '<div onclick="window.setState({cat:\'all\',selected:null,search:\'\',showSearch:false,settingsOpen:false});window.scrollTo({top:0,behavior:\'instant\'});" style="display:flex;flex-direction:column;align-items:center;cursor:pointer">'
     + '<span style="font-size:16px;font-weight:800;color:#fff;letter-spacing:0.5px">ATC Emergency Archive</span>'
-    + '<span style="font-size:9px;color:rgba(255,255,255,0.8);letter-spacing:0.3px">© bongsjeon@koreanair.com</span>'
+    + '<span style="font-size:9px;font-weight:500;color:rgba(255,255,255,0.85);letter-spacing:0.3px;margin-top:2px;">© bongsjeon@koreanair.com</span>'
     + '</div>'
-    + '<button onclick="setState({menuOpen:!state.menuOpen})" style="background:none;border:none;cursor:pointer;padding:6px 2px;display:flex;flex-direction:column;gap:4px">'
-    + '<div style="width:20px;height:2px;background:#fff;border-radius:1px"></div>'
-    + '<div style="width:20px;height:2px;background:#fff;border-radius:1px"></div>'
-    + '<div style="width:20px;height:2px;background:#fff;border-radius:1px"></div>'
-    + '</button></div></div>';
+    + '<button onclick="window.setState({settingsOpen:!state.settingsOpen,menuOpen:false})" style="background:none;border:none;cursor:pointer;color:#fff;font-size:13px;font-weight:700;padding:8px;opacity:0.95;letter-spacing:0.5px;">SETTINGS</button>'
+    + '</div></div>';
 
   // Category Dropdown Selection Menu
   if (s.menuOpen) {
-    html += '<div onclick="setState({menuOpen:false})" style="position:fixed;inset:0;z-index:24;background:rgba(0,0,0,0.05)"></div>'
-      + '<div style="position:fixed;top:56px;right:0;width:220px;background:#fff;z-index:25;box-shadow:-4px 4px 20px rgba(0,0,0,0.05);border-top:3px solid ' + N + ';border-radius:0 0 0 12px;overflow:hidden;animation: slideDown 0.2s ease-out">'
+    html += '<div onclick="window.setState({menuOpen:false})" style="position:fixed;inset:0;z-index:24;background:rgba(16,24,32,0.1)"></div>'
+      + '<div style="position:fixed;top:60px;right:0;width:240px;background:' + colors.W + ';z-index:25;box-shadow:-4px 4px 24px rgba(16,24,32,0.12);border-top:3px solid ' + colors.N + ';border-radius:0 0 0 12px;overflow:hidden;animation: slideDown 0.2s ease-out">'
       + CATEGORIES.map(function(c, i) {
         var active = s.cat === c.id;
-        return '<button onclick="setState({cat:\'' + c.id + '\',menuOpen:false,selected:null})" '
-          + 'style="display:flex;align-items:center;gap:10px;width:100%;padding:12px 16px;background:' + (active ? N : "#fff") + ';color:' + (active ? "#fff" : T) + ';border:none;border-bottom:' + (i < CATEGORIES.length - 1 ? "1px solid #DDE5ED" : "none") + ';cursor:pointer;text-align:left;font-size:13px;font-weight:' + (active ? 700 : 400) + '">'
+        return '<button onclick="window.setState({cat:\'' + c.id + '\',menuOpen:false,selected:null,settingsOpen:false})" '
+          + 'style="display:flex;align-items:center;gap:12px;width:100%;padding:14px 18px;background:' + (active ? colors.N : colors.W) + ';color:' + (active ? "#fff" : colors.T) + ';border:none;border-bottom:' + (i < CATEGORIES.length - 1 ? "1px solid " + colors.B : "none") + ';cursor:pointer;text-align:left;font-size:14px;font-weight:' + (active ? 800 : 600) + '">'
           + '<span>' + c.label + '</span>'
-          + (active ? '<div style="margin-left:auto;width:6px;height:6px;border-radius:50%;background:#fff;flex-shrink:0"></div>' : '')
+          + (active ? '<div style="margin-left:auto;width:8px;height:8px;border-radius:50%;background:#fff;flex-shrink:0"></div>' : '')
           + '</button>';
       }).join("") + '</div>';
   }
 
   // Search input header
   if (s.showSearch) {
-    html += '<div style="background:' + G + ';padding:10px 16px;border-bottom:1px solid #DDE5ED;position:fixed;top:56px;left:0;right:0;max-width:480px;margin:0 auto;z-index:24">'
-      + '<div style="background:#fff;border-radius:8px;padding:8px 14px;display:flex;align-items:center;gap:8px;border:1.5px solid ' + N + '44">'
-      + '<span style="font-size:13px;font-weight:700;color:' + M + '">SEARCH</span>'
-      + '<input id="searchInput" value="' + esc(s.search) + '" oninput="setState({search:this.value})" placeholder="Search recordings..." style="flex:1;background:none;border:none;outline:none;color:' + T + ';font-size:14px" autofocus/>'
-      + (s.search ? '<button onclick="setState({search:\'\'})" style="background:none;border:none;color:' + M + ';cursor:pointer;font-size:14px;font-weight:700;padding:0">✕</button>' : '')
+    html += '<div style="background:' + colors.G + ';padding:12px 16px;border-bottom:1px solid ' + colors.B + ';position:fixed;top:60px;left:0;right:0;max-width:480px;margin:0 auto;z-index:24">'
+      + '<div style="background:' + colors.W + ';border-radius:8px;padding:10px 14px;display:flex;align-items:center;gap:10px;border:2px solid ' + colors.N + '44">'
+      + '<span style="font-size:13px;font-weight:800;color:' + colors.M + '">SEARCH</span>'
+      + '<input id="searchInput" value="' + esc(s.search) + '" oninput="window.setState({search:this.value})" placeholder="Search recordings..." style="flex:1;background:none;border:none;outline:none;color:' + colors.T + ';font-size:15px;font-weight:500;" autofocus/>'
+      + (s.search ? '<button onclick="window.setState({search:\'\'})" style="background:none;border:none;color:' + colors.M + ';cursor:pointer;font-size:16px;font-weight:800;padding:0">✕</button>' : '')
       + '</div></div>';
   }
 
-  // Sticky Category indicator bar
-  html += '<div style="background:' + N + ';padding:12px 16px;position:sticky;top:56px;z-index:20;margin-top:56px;box-shadow:0 2px 4px rgba(106,140,175,0.05)">'
+  // Sticky Category indicator & Home bar
+  html += '<div style="background:' + colors.N + ';padding:14px 16px;position:sticky;top:60px;z-index:20;margin-top:60px;box-shadow:0 2px 6px rgba(66,122,161,0.1)">'
     + '<div style="display:flex;align-items:center;justify-content:space-between">'
     + '<div>'
-    + '<div style="font-size:9px;color:rgba(255,255,255,0.7);letter-spacing:1px;margin-bottom:2px">FILTER BY CATEGORY</div>'
-    + '<div style="font-size:14px;font-weight:700;color:#fff;display:flex;align-items:center;gap:7px"><span>' + (activeCat.label || "") + '</span></div>'
+    + '<div style="font-size:10px;font-weight:600;color:rgba(255,255,255,0.85);letter-spacing:1px;margin-bottom:3px">FILTER BY CATEGORY</div>'
+    + '<div style="font-size:15px;font-weight:800;color:#fff;display:flex;align-items:center;gap:7px"><span>' + (activeCat.label || "") + '</span></div>'
     + '</div>'
-    + '<button onclick="setState({cat:\'all\',selected:null,search:\'\',showSearch:false});window.scrollTo({top:0,behavior:\'instant\'});" style="background:#fff;border:none;color:' + N + ';font-size:11px;font-weight:700;padding:6px 12px;border-radius:6px;cursor:pointer">HOME</button>'
+    + '<div style="display:flex;gap:8px;">'
+    + '  <button onclick="window.setState({menuOpen:!state.menuOpen,settingsOpen:false})" style="background:rgba(255,255,255,0.25);border:none;color:#fff;font-size:12px;font-weight:800;padding:8px 14px;border-radius:6px;cursor:pointer;letter-spacing:0.5px;">CATEGORY</button>'
+    + '  <button onclick="window.setState({cat:\'all\',selected:null,search:\'\',showSearch:false,settingsOpen:false});window.scrollTo({top:0,behavior:\'instant\'});" style="background:#fff;border:none;color:' + colors.N + ';font-size:12px;font-weight:800;padding:8px 14px;border-radius:6px;cursor:pointer;letter-spacing:0.5px;">HOME</button>'
+    + '</div>'
     + '</div></div>';
 
   // Video Recordings List Area
-  html += '<div style="padding:0 16px; flex:1; background:#fff;">';
-  if (s.selected) {
-    html += detailHTML(s.selected);
+  html += '<div style="padding:0 16px; flex:1; background:' + colors.W + ';">';
+  
+  if (s.settingsOpen) {
+    html += settingsHTML(colors);
+  } else if (s.selected) {
+    html += detailHTML(s.selected, colors);
   } else {
-    html += '<div style="font-size:12px;color:' + M + ';padding:12px 0 4px;display:flex;justify-content:space-between;border-bottom:1px solid #DDE5ED">'
+    html += '<div style="font-size:13px;font-weight:600;color:' + colors.M + ';padding:14px 0 6px;display:flex;justify-content:space-between;border-bottom:1px solid ' + colors.B + '">'
       + '<span>' + filtered.length + ' emergency recordings</span>'
-      + (lastDate ? '<span>Last updated: ' + lastDate + '</span>' : '')
+      + '<span>Last Sync: ' + lastDate + '</span>'
       + '</div>'
-      + filtered.map(cardHTML).join("")
-      + (filtered.length === 0 ? '<div style="text-align:center;padding:80px 0;color:' + M + ';font-size:14px">No matching recordings found.</div>' : '');
+      + filtered.map(function(v) { return cardHTML(v, colors); }).join("")
+      + (filtered.length === 0 ? '<div style="text-align:center;padding:80px 0;color:' + colors.T + ';font-size:15px;font-weight:600;">No matching recordings found.</div>' : '');
   }
   html += '</div>';
 
@@ -861,29 +956,39 @@ function render() {
       inp.setSelectionRange(inp.value.length, inp.value.length);
     }
   }
-}
+};
 
-// ── Application Event Listeners ──────────────────────────────────
-window.setState = function(patch) {
-  Object.assign(state, patch);
-  var goY = (patch.selected === null && patch._restoreY !== undefined) ? patch._restoreY : null;
-  render();
-  if (goY !== null) window.scrollTo({ top: goY, behavior: "instant" });
+// ── 10. Handlers ──────────────────────────────────
+window.toggleTheme = function() {
+  var newTheme = state.theme === "light" ? "dark" : "light";
+  localStorage.setItem(LS_THEME, newTheme);
+  window.setState({ theme: newTheme });
+};
+
+window.triggerManualUpdate = function() {
+  window.fetchNewVideos();
 };
 
 window.showDetail = function(id) {
   var v = state.videos.find(function(v) { return Number(v.id) === Number(id); });
   if (v) {
-    setState({ selected: v, scrollY: window.scrollY });
+    window.setState({ selected: v, scrollY: window.scrollY, settingsOpen: false });
     window.scrollTo({ top: 0, behavior: "instant" });
   }
 };
 
-window.fetchNewVideos = fetchNewVideos;
+// ── 11. Initial execution ──────────────────────────────────
+var cachedTheme = localStorage.getItem(LS_THEME);
+if (cachedTheme === "dark" || cachedTheme === "light") {
+  state.theme = cachedTheme;
+}
 
-render();
+window.render();
+if ((Date.now() - state.lastUpdate) >= ONE_WEEK) {
+  window.fetchNewVideos();
+}
 
-// ── Swipe Gestures (Swipe Right -> Back to List) ─────────────────
+// ── 12. Swipe Gestures (Swipe Right -> Back to List) ─────────────────
 (function() {
   var sx = 0, sy = 0;
   document.addEventListener("touchstart", function(e) {
@@ -891,11 +996,11 @@ render();
     sy = e.touches[0].clientY;
   }, { passive: true });
   document.addEventListener("touchend", function(e) {
-    if (!state.selected) return;
+    if (!state.selected && !state.settingsOpen) return;
     var dx = e.changedTouches[0].clientX - sx;
     var dy = e.changedTouches[0].clientY - sy;
     if (dx < 60 || Math.abs(dy) > Math.abs(dx) * 0.6) return;
-    setState({ selected: null, _restoreY: state.scrollY || 0 });
+    window.setState({ selected: null, settingsOpen: false, _restoreY: state.scrollY || 0 });
   }, { passive: true });
 })();
 </script>
