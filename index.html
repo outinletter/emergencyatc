@@ -5,13 +5,21 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
 <title>ATC Emergency Radio Archive</title>
 <style>
+/* 최상단 폰트 스케일 변수 설정 */
+:root {
+  --font-scale: 1;
+}
+
+/* 모바일 최적화 고가독성 폰트 (Pretendard & System Default) */
+@import url("https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.8/dist/web/static/pretendard.css");
+
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
 }
 body {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
   max-width: 480px;
   margin: 0 auto;
   min-height: 100vh;
@@ -82,6 +90,7 @@ var ONE_WEEK = 7 * 24 * 60 * 60 * 1000;
 var LS_VIDEOS = "atc_videos_v7";
 var LS_UPDATE = "atc_lastupdate_v7";
 var LS_THEME = "atc_theme_v1";
+var LS_FONTSCALE = "atc_font_scale_v1";
 
 // Gemini API Key (empty string for runtime environment key Injection)
 const apiKey = "";
@@ -147,9 +156,9 @@ var DUMMY_NEW = [
 
 var ANALYSIS = {
   engine: {
-    summary: "This recording captures a critical engine failure event where the flight crew executed emergency procedures with remarkable professionalism. The crew immediately declared a MAYDAY and coordinated with ATC for priority handling.\n\nThe incident highlights the importance of crew resource management (CRM) and clear communication under extreme stress. ATC demonstrated exceptional situational awareness by pre-positioning emergency services (ARFF) along the runway.",
+    summary: "This recording captures a critical left engine failure event shortly after takeoff where the flight crew executed emergency procedures with remarkable professionalism. The crew immediately declared a MAYDAY and coordinated with ATC for a priority return to the departure airport.\n\nThe incident highlights the importance of crew resource management (CRM) and clear communication under extreme stress. ATC demonstrated exceptional situational awareness by clearing the airspace and pre-positioning emergency services (ARFF) along the runway.",
     pilotRoles: [
-      "Declare MAYDAY stating the nature of the emergency, souls on board, and fuel status.",
+      "Declare MAYDAY stating the nature of the emergency (left engine failure), souls on board, and fuel status.",
       "Execute the engine failure checklist and memory items (ECAM/EICAS) immediately.",
       "Maintain aircraft control prioritizing: Aviate, Navigate, Communicate.",
       "Coordinate with ATC to secure the nearest suitable runway for emergency landing."
@@ -161,12 +170,12 @@ var ANALYSIS = {
       "Alert airport emergency services (ARFF) to stand by along the runway."
     ],
     dialogue: [
-      {from: "PILOT", msg: "MAYDAY, MAYDAY, MAYDAY, United 421, dual engine failure, 8,000 feet, requesting immediate return to JFK, 182 souls on board."},
-      {from: "ATC", msg: "United 421, MAYDAY acknowledged. Turn left heading 270, descend 3,000. Emergency services alerted. Say fuel remaining."},
-      {from: "PILOT", msg: "United 421, left heading 270, descend 3,000. Fuel remaining is two hours. Request ILS runway 31L."},
-      {from: "ATC", msg: "United 421, heading 240, cleared ILS runway 31L, 18 miles out. Wind 310 at 12 knots. All departures held."},
-      {from: "PILOT", msg: "United 421, request fire and rescue standby on runway. Running emergency engine restart checklist."},
-      {from: "ATC", msg: "United 421, fire and rescue units are standing by runway 31L. Report established on localizer."}
+      {from: "PILOT", msg: "MAYDAY, MAYDAY, MAYDAY, United 81, left engine failure, 8,000 feet, requesting immediate return to Washington, 182 souls on board."},
+      {from: "ATC", msg: "United 81, MAYDAY acknowledged. Turn left heading 270, descend and maintain 3,000. Emergency services alerted. Say fuel remaining."},
+      {from: "PILOT", msg: "United 81, left heading 270, descending to 3,000. Fuel remaining is two hours. Request ILS runway 19R."},
+      {from: "ATC", msg: "United 81, heading 240, cleared ILS runway 19R, 18 miles out. Wind 180 at 12 knots. All departures held."},
+      {from: "PILOT", msg: "United 81, request fire and rescue standby on runway. Running emergency engine shutdown checklist."},
+      {from: "ATC", msg: "United 81, fire and rescue units are standing by runway 19R. Report established on localizer."}
     ]
   },
   medical: {
@@ -379,29 +388,29 @@ var ANALYSIS = {
 // ── Pre-computed Local Cache: ICAO L6 Deep Analysis ──────────────────────────────
 var ICAO_ANALYSIS_PRESETS = {
   engine: `STEP 1: Reconstruct the conversation (Level 6)
-PILOT: MAYDAY, MAYDAY, MAYDAY. United 421, dual engine failure, currently passing 8,000 feet. Requesting immediate straight-in vectors to JFK, with 182 souls on board and two hours of fuel remaining.
-ATC: United 421, JFK Tower, copy MAYDAY, dual engine failure. Turn left heading 270, descend and maintain 3,000 feet. All departures have been suspended. Airport emergency services (ARFF) are fully alerted. Confirm fuel remaining.
-PILOT: Left heading 270, descend and maintain 3,000 feet, United 421. Fuel remaining is two hours. Requesting ILS Runway 31 Left approach.
-ATC: United 421, fly heading 240, you are cleared for straight-in ILS Runway 31 Left approach, 18 miles from touchdown. Current surface wind 310 at 12 knots.
-PILOT: Heading 240, cleared for straight-in ILS Runway 31 Left approach, United 421. Requesting emergency fire and rescue standby on touchdown. We are now running the emergency engine restart checklist.
-ATC: United 421, Roger. Crash fire and rescue units are fully prepared and standing by along Runway 31 Left. Report when established on the localizer.
+PILOT: MAYDAY, MAYDAY, MAYDAY. United 81, left engine failure, currently passing 8,000 feet. Requesting immediate straight-in vectors to Washington, with 182 souls on board and two hours of fuel remaining.
+ATC: United 81, Washington Approach, copy MAYDAY, left engine failure. Turn left heading 270, descend and maintain 3,000 feet. All departures have been suspended. Airport emergency services (ARFF) are fully alerted. Confirm fuel remaining.
+PILOT: Left heading 270, descend and maintain 3,000 feet, United 81. Fuel remaining is two hours. Requesting ILS Runway 19 Right approach.
+ATC: United 81, fly heading 240, you are cleared for straight-in ILS Runway 19 Right approach, 18 miles from touchdown. Current surface wind 180 at 12 knots.
+PILOT: Heading 240, cleared for straight-in ILS Runway 19 Right approach, United 81. Requesting emergency fire and rescue standby on touchdown. We are now running the engine shutdown checklist.
+ATC: United 81, Roger. Crash fire and rescue units are fully prepared and standing by along Runway 19 Right. Report when established on the localizer.
 
 STEP 2: Sentence-by-sentence correction
-Original: MAYDAY, MAYDAY, MAYDAY, United 421, dual engine failure, 8,000 feet, requesting immediate return to JFK, 182 souls on board.
-Corrected: MAYDAY, MAYDAY, MAYDAY. United 421, dual engine failure, currently passing 8,000 feet. Requesting immediate straight-in vectors to JFK, with 182 souls on board and two hours of fuel remaining.
+Original: MAYDAY, MAYDAY, MAYDAY, United 81, left engine failure, 8,000 feet, requesting immediate return to Washington, 182 souls on board.
+Corrected: MAYDAY, MAYDAY, MAYDAY. United 81, left engine failure, currently passing 8,000 feet. Requesting immediate straight-in vectors to Washington, with 182 souls on board and two hours of fuel remaining.
 Explanation: This reconstruction applies FAA AIM Example #70 by structuring readback sequences properly. Adding specific altimetry tracking ('currently passing 8,000 feet') and clear operational requests ('straight-in vectors') improves structural organization and linguistic clarity.
 
-Original: United 421, left heading 270, descend 3,000. Fuel remaining is two hours. Request ILS runway 31L.
-Corrected: Left heading 270, descend and maintain 3,000 feet, United 421. Fuel remaining is two hours. Requesting ILS Runway 31 Left approach.
-Explanation: In accordance with FAA AIM Examples #66 and #70, runway designators must be fully spoken ('Runway 31 Left' instead of 'runway 31L'), and altitude targets must be read back sequentially to prevent human-factor readback errors.
+Original: United 81, left heading 270, descending to 3,000. Fuel remaining is two hours. Request ILS runway 19R.
+Corrected: Left heading 270, descend and maintain 3,000 feet, United 81. Fuel remaining is two hours. Requesting ILS Runway 19 Right approach.
+Explanation: In accordance with FAA AIM Examples #66 and #70, runway designators must be fully spoken ('Runway 19 Right' instead of 'runway 19R'), and altitude targets must be read back sequentially to prevent human-factor readback errors.
 
-Original: United 421, request fire and rescue standby on runway. Running emergency engine restart checklist.
-Corrected: Heading 240, cleared for straight-in ILS Runway 31 Left approach, United 421. Requesting emergency fire and rescue standby on touchdown. We are now running the emergency engine restart checklist.
-Explanation: Demonstrates complex, cohesive pilot interaction by explicitly restating critical clearances (Runway 31 Left) before adding tactical emergency requests.
+Original: United 81, request fire and rescue standby on runway. Running emergency engine shutdown checklist.
+Corrected: Heading 240, cleared for straight-in ILS Runway 19 Right approach, United 81. Requesting emergency fire and rescue standby on touchdown. We are now running the engine shutdown checklist.
+Explanation: Demonstrates complex, cohesive pilot interaction by explicitly restating critical clearances (Runway 19 Right) before adding tactical emergency requests.
 
 STEP 3: Advanced alternative expressions
-Alternative: United 421 is experiencing a double powerplant failure, requesting immediate priority radar vectors to the nearest suitable runway.
-Alternative: We have lost all thrust, initiating emergency drift-down. Clear the arrival corridor for an immediate glide approach to Runway 31 Left.`,
+Alternative: United 81 is experiencing a severe compressor stall on the left powerplant, requesting immediate priority radar vectors to the nearest suitable runway.
+Alternative: We have lost thrust on the left engine, initiating emergency drift-down. Clear the arrival corridor for an immediate glide approach to Runway 19 Right.`,
 
   medical: `STEP 1: Reconstruct the conversation (Level 6)
 PILOT: PAN PAN, PAN PAN, Delta 892. We are declaring a medical emergency due to an unresponsive passenger suffering a suspected cardiac arrest. Requesting immediate diversion and priority handling to Boston Logan.
@@ -596,6 +605,7 @@ function saveVideos(v){try{localStorage.setItem(LS_VIDEOS,JSON.stringify(v));}ca
 function loadLastUpdate(){try{var s=localStorage.getItem(LS_UPDATE);return s?parseInt(s):0;}catch(e){return 0;}}
 function saveLastUpdate(ts){try{localStorage.setItem(LS_UPDATE,String(ts));}catch(e){}}
 
+var cachedFontScale = parseFloat(localStorage.getItem(LS_FONTSCALE));
 var state = {
   videos: loadVideos() || SEED,
   lastUpdate: loadLastUpdate(),
@@ -608,7 +618,8 @@ var state = {
   justUpdated: false,
   scrollY: 0,
   settingsOpen: false,
-  theme: "light"
+  theme: "light",
+  fontScale: isNaN(cachedFontScale) ? 1.0 : cachedFontScale
 };
 
 // ── 4. API & Fetch Logic ──────────────────────────────
@@ -740,58 +751,102 @@ window.openYoutube = function(id) {
   }
 };
 
+window.setFontScale = function(scale) {
+  localStorage.setItem(LS_FONTSCALE, scale);
+  window.setState({ fontScale: scale });
+};
+
 // ── 6. ICAO Level 6 HTML Parser ──────────────────────
 function icaoToHTML(text, colors) {
   if (!text) return "";
   text = text.replace(/ICAO Level 6 Aviation English[^\n]*\n?/gi, "");
   text = text.replace(/PAN PAN PAN/gi, "PAN PAN");
   var lines = text.split("\n");
-  var html = '<div style="font-size:15px;line-height:1.75;color:' + colors.T + '">';
+  var html = '<div style="font-size:calc(16px * var(--font-scale));line-height:1.75;color:' + colors.T + '">';
+  
+  var inCorrectionBox = false;
+  var firstCorrection = true;
+
   lines.forEach(function(raw) {
     var line = raw.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
     line = line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+    
+    // 섹션 제목(STEP 1, 2, 3 등) 처리
     if (/^#{1,3}\s/.test(line) || /^STEP\s*[123]/i.test(line)) {
-      html += '<div style="font-size:15px;font-weight:800;color:' + colors.N + ';letter-spacing:0.8px;text-transform:uppercase;margin:32px 0 16px;padding-bottom:8px;border-bottom:2px solid ' + colors.N + '44">' + line.replace(/^#{1,3}\s*/, "") + '</div>';
-    } else if (/^[\*\-]\s/.test(line)) {
+      if (inCorrectionBox) {
+        html += '</div>'; // 이전 STEP 2 박스 닫기
+        inCorrectionBox = false;
+      }
+      html += '<div style="font-size:calc(16px * var(--font-scale));font-weight:800;color:' + colors.N + ';letter-spacing:0.8px;text-transform:uppercase;margin:32px 0 16px;padding-bottom:8px;border-bottom:2px solid ' + colors.N + '44">' + line.replace(/^#{1,3}\s*/, "") + '</div>';
+      
+      // STEP 2 시작 시, 큰 박스 컨테이너 열기
+      if (/STEP\s*2/i.test(line)) {
+        inCorrectionBox = true;
+        firstCorrection = true;
+        var boxBg = state.theme === "dark" ? "#1E2A38" : "#F8FAFC";
+        html += '<div style="background:' + boxBg + '; border:1px solid ' + colors.B + '; border-radius:12px; padding:20px; margin-bottom: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.03);">';
+      }
+      return;
+    }
+
+    // STEP 2 내부(큰 박스 안) 렌더링 로직
+    if (inCorrectionBox) {
+      if (/^(Original)\s*:/i.test(line)) {
+        // 첫 번째 예문이 아닐 경우 구분선(Divider) 추가
+        if (!firstCorrection) {
+          html += '<div style="border-top:1px dashed ' + colors.B + '; margin: 24px 0;"></div>';
+        }
+        firstCorrection = false;
+        var msg = line.replace(/^(Original)\s*:\s*/i, "");
+        html += '<div style="margin-bottom:12px;"><span style="display:inline-block;font-size:calc(11px * var(--font-scale));font-weight:800;color:#fff;background:#94A3B8;padding:4px 8px;border-radius:6px;margin-bottom:6px;letter-spacing:0.5px;">ORIGINAL</span><div style="font-size:calc(15px * var(--font-scale));color:' + colors.M + ';text-decoration:line-through;margin-left:4px;">' + msg + '</div></div>';
+      } else if (/^(Corrected)\s*:/i.test(line)) {
+        var msg = line.replace(/^(Corrected)\s*:\s*/i, "");
+        html += '<div style="margin-bottom:12px;"><span style="display:inline-block;font-size:calc(11px * var(--font-scale));font-weight:800;color:#fff;background:' + colors.N + ';padding:4px 8px;border-radius:6px;margin-bottom:6px;letter-spacing:0.5px;">LEVEL 6 CORRECTED</span><div style="font-size:calc(18px * var(--font-scale));font-weight:700;color:' + colors.T + ';margin-left:4px;">' + msg + '</div></div>';
+      } else if (/^(Explanation)\s*:/i.test(line)) {
+        var msg = line.replace(/^(Explanation)\s*:\s*/i, "");
+        var expBg = state.theme === "dark" ? "rgba(74, 222, 128, 0.1)" : "rgba(5, 150, 105, 0.08)";
+        var expColor = state.theme === "dark" ? "#4ADE80" : "#059669";
+        html += '<div style="background:' + expBg + ';border-left:4px solid ' + expColor + ';padding:12px 16px;border-radius:0 8px 8px 0;margin-top:12px;"><div style="font-size:calc(12px * var(--font-scale));font-weight:800;color:' + expColor + ';margin-bottom:6px;letter-spacing:0.5px;">EXPLANATION</div><div style="font-size:calc(15px * var(--font-scale));color:' + colors.T + ';line-height:1.6;">' + msg + '</div></div>';
+      } else if (line.trim() === "") {
+        // 박스 내 불필요한 빈 줄 무시
+      } else {
+         html += '<p style="margin-bottom:8px; font-size: calc(15px * var(--font-scale));">' + line + '</p>';
+      }
+      return;
+    }
+
+    // STEP 1, STEP 3 등 일반 렌더링 영역
+    if (/^[\*\-]\s/.test(line)) {
       html += '<div style="display:flex;gap:10px;align-items:flex-start;margin-bottom:12px; padding-left: 8px;">'
         + '<div style="width:6px;height:6px;border-radius:50%;background:' + colors.N + ';flex-shrink:0;margin-top:9px"></div>'
-        + '<span style="font-size:15px;">' + line.replace(/^[\*\-]\s/, "") + '</span></div>';
+        + '<span style="font-size:calc(16px * var(--font-scale));">' + line.replace(/^[\*\-]\s/, "") + '</span></div>';
     } else if (/^(PILOT|ATC)\s*:/i.test(line)) {
       var isPilot = /^PILOT/i.test(line);
       var msg = line.replace(/^(PILOT|ATC)\s*:\s*/i, "");
-      
-      // Messenger-style bubbles
       var bubbleBg = isPilot ? (state.theme === "dark" ? "#2C3E50" : "#EBF5FB") : (state.theme === "dark" ? "#1E2A38" : "#F4F6F8");
       var bubbleBorder = isPilot ? colors.N : colors.B;
       var bubbleAlign = isPilot ? "flex-start" : "flex-end";
       var borderRadiusStyle = isPilot ? "border-radius:12px;border-top-left-radius:4px;" : "border-radius:12px;border-top-right-radius:4px;";
       
       html += '<div style="display:flex;flex-direction:column;align-items:' + bubbleAlign + ';margin-bottom:20px">'
-        + '<div style="font-size:11px;font-weight:800;letter-spacing:0.5px;color:' + colors.M + ';margin-bottom:6px;padding:0 6px;">' + (isPilot ? "PILOT" : "ATC") + '</div>'
-        + '<div style="max-width:88%;padding:14px 18px;font-size:15px;line-height:1.6;color:' + colors.T + ';background:' + bubbleBg + ';border:1px solid ' + bubbleBorder + '66;' + borderRadiusStyle + 'box-shadow: 0 2px 4px rgba(0,0,0,0.02);">' + msg + '</div>'
+        + '<div style="font-size:calc(12px * var(--font-scale));font-weight:800;letter-spacing:0.5px;color:' + colors.M + ';margin-bottom:6px;padding:0 6px;">' + (isPilot ? "PILOT" : "ATC") + '</div>'
+        + '<div style="max-width:88%;padding:14px 18px;font-size:calc(16px * var(--font-scale));line-height:1.6;color:' + colors.T + ';background:' + bubbleBg + ';border:1px solid ' + bubbleBorder + '66;' + borderRadiusStyle + 'box-shadow: 0 2px 4px rgba(0,0,0,0.02);">' + msg + '</div>'
         + '</div>';
-    } else if (/^(Original|Corrected|Explanation|Alternative)\s*:/i.test(line)) {
-      var color = colors.N;
-      var bgHighlight = "transparent";
-      var padding = "0";
-      
-      if (line.indexOf("Original") >= 0) {
-        color = state.theme === "dark" ? "#A0AAB5" : "#64748B";
-      } else if (line.indexOf("Explanation") >= 0) {
-        color = state.theme === "dark" ? "#4ADE80" : "#059669";
-        bgHighlight = state.theme === "dark" ? "rgba(74, 222, 128, 0.1)" : "rgba(5, 150, 105, 0.08)";
-        padding = "2px 8px";
-      } else if (line.indexOf("Corrected") >= 0 || line.indexOf("Alternative") >= 0) {
-         color = colors.N;
-      }
-      
-      html += '<div style="display:inline-block; font-size:12px;font-weight:800;color:' + color + ';background:' + bgHighlight + ';padding:' + padding + ';border-radius:4px;letter-spacing:0.8px;margin:16px 0 6px;text-transform:uppercase">' + line + '</div>';
+    } else if (/^(Alternative)\s*:/i.test(line)) {
+      var msg = line.replace(/^(Alternative)\s*:\s*/i, "");
+      html += '<div style="margin-bottom:16px;background:' + colors.W + ';border:1px solid ' + colors.B + ';padding:14px 18px;border-radius:12px;box-shadow: 0 2px 8px rgba(0,0,0,0.02);"><span style="display:inline-block;font-size:calc(12px * var(--font-scale));font-weight:800;color:' + colors.N + ';margin-bottom:8px;letter-spacing:0.5px;">ALTERNATIVE</span><div style="font-size:calc(16px * var(--font-scale));font-weight:600;line-height:1.5;color:' + colors.T + ';">' + msg + '</div></div>';
     } else if (line.trim() === "") {
       html += '<div style="height:8px"></div>';
     } else {
-      html += '<p style="margin-bottom:12px; font-size: 15px;">' + line + '</p>';
+      html += '<p style="margin-bottom:12px; font-size: calc(16px * var(--font-scale));">' + line + '</p>';
     }
   });
+  
+  // 반복이 끝난 뒤 STEP 2 박스가 열려 있다면 닫아줌
+  if (inCorrectionBox) {
+     html += '</div>';
+  }
+  
   html += '</div>';
   return html;
 }
@@ -809,12 +864,12 @@ function getColors() {
     };
   } else {
     return {
-      N: "#7B9ACC", // Pastel Blue
+      N: "#427AA1", // Clear Sky Blue
       W: "#ffffff", // Card Background
-      G: "#F8F9FA", // App Background (Soft clean look)
-      T: "#2C3E50", // Text (Deep navy/charcoal for visibility)
-      M: "#7F8C8D", // Muted
-      B: "#E2E8F0"  // Border
+      G: "#F2F6FA", // App Background (Soft clean look)
+      T: "#101820", // Text (Deep night for visibility)
+      M: "#4B5563", // Slate Gray
+      B: "#DDE5ED"  // Border
     };
   }
 }
@@ -822,7 +877,7 @@ function getColors() {
 // ── 8. UI Rendering Templates ───────────────────────────────────────
 function secLabel(label, colors) {
   return '<div style="display:flex;align-items:center;margin:32px 0 16px;padding-bottom:8px;border-bottom:2px solid ' + colors.N + '44">'
-    + '<span style="font-size:16px;font-weight:800;color:' + colors.N + ';letter-spacing:1px;text-transform:uppercase">' + label + '</span></div>';
+    + '<span style="font-size:calc(17px * var(--font-scale));font-weight:800;color:' + colors.N + ';letter-spacing:1px;text-transform:uppercase">' + label + '</span></div>';
 }
 
 function rolesHTML(pilotRoles, atcRoles, colors) {
@@ -830,12 +885,12 @@ function rolesHTML(pilotRoles, atcRoles, colors) {
     return '<div style="border-radius:12px;padding:20px;background:' + colors.N + '08;border:1px solid ' + colors.N + '33;margin-bottom:16px;box-shadow:0 2px 8px rgba(0,0,0,0.02)">'
       + '<div style="display:flex;align-items:center;gap:10px;margin-bottom:16px;padding-bottom:12px;border-bottom:1px dashed ' + colors.N + '44">'
       + '<div style="width:10px;height:10px;border-radius:50%;background:' + colors.N + '"></div>'
-      + '<span style="font-size:15px;font-weight:800;color:' + colors.N + ';letter-spacing:1.2px">' + label + '</span></div>'
+      + '<span style="font-size:calc(16px * var(--font-scale));font-weight:800;color:' + colors.N + ';letter-spacing:1.2px">' + label + '</span></div>'
       + '<ul style="margin:0;padding:0;list-style:none;display:flex;flex-direction:column;gap:12px">'
       + items.slice(0, 4).map(function(item) {
         return '<li style="display:flex;gap:12px;align-items:flex-start">'
           + '<div style="width:6px;height:6px;border-radius:50%;background:' + colors.N + '99;flex-shrink:0;margin-top:8px"></div>'
-          + '<span style="font-size:15px;line-height:1.6;color:' + colors.T + '">' + esc(item) + '</span></li>';
+          + '<span style="font-size:calc(16px * var(--font-scale));line-height:1.6;color:' + colors.T + '">' + esc(item) + '</span></li>';
       }).join("") + '</ul></div>';
   }
   return block("PILOT ROLES", pilotRoles) + block("ATC ROLES", atcRoles);
@@ -850,8 +905,8 @@ function dialogueHTML(dialogue, colors) {
     var borderRadiusStyle = isPilot ? "border-radius:12px;border-top-left-radius:4px;" : "border-radius:12px;border-top-right-radius:4px;";
       
     return '<div style="display:flex;flex-direction:column;align-items:' + bubbleAlign + ';margin-bottom:20px">'
-      + '<div style="font-size:11px;font-weight:800;letter-spacing:0.5px;color:' + colors.M + ';margin-bottom:6px;padding:0 6px;">' + line.from + '</div>'
-      + '<div style="max-width:88%;padding:14px 18px;font-size:15px;line-height:1.6;color:' + colors.T + ';background:' + bubbleBg + ';border:1px solid ' + bubbleBorder + '66;' + borderRadiusStyle + 'box-shadow: 0 2px 4px rgba(0,0,0,0.02);">' + esc(line.msg) + '</div>'
+      + '<div style="font-size:calc(12px * var(--font-scale));font-weight:800;letter-spacing:0.5px;color:' + colors.M + ';margin-bottom:6px;padding:0 6px;">' + line.from + '</div>'
+      + '<div style="max-width:88%;padding:14px 18px;font-size:calc(16px * var(--font-scale));line-height:1.6;color:' + colors.T + ';background:' + bubbleBg + ';border:1px solid ' + bubbleBorder + '66;' + borderRadiusStyle + 'box-shadow: 0 2px 4px rgba(0,0,0,0.02);">' + esc(line.msg) + '</div>'
       + '</div>';
   }).join("");
 }
@@ -860,17 +915,17 @@ function cardHTML(v, colors) {
   var validCat = getValidCat(v.category);
   var c = getCat(validCat);
   var playBtn = v.ytId
-    ? '<button onclick="window.openYoutube(\'' + esc(v.ytId) + '\');event.stopPropagation();" style="display:inline-flex;align-items:center;gap:4px;background:' + colors.N + '1A;color:' + colors.N + ';font-size:11px;font-weight:800;padding:6px 14px;border-radius:12px;border:none;cursor:pointer;text-decoration:none;letter-spacing:0.5px;vertical-align:middle;margin-left:10px;white-space:nowrap;transition:background 0.2s;">PLAY</button>'
+    ? '<button onclick="window.openYoutube(\'' + esc(v.ytId) + '\');event.stopPropagation();" style="display:inline-flex;align-items:center;gap:4px;background:' + colors.N + '1A;color:' + colors.N + ';font-size:calc(12px * var(--font-scale));font-weight:800;padding:6px 14px;border-radius:12px;border:none;cursor:pointer;text-decoration:none;letter-spacing:0.5px;vertical-align:middle;margin-left:10px;white-space:nowrap;transition:background 0.2s;">PLAY</button>'
     : '';
-  var isNewBadge = v.isNew ? '<span style="background:#FF9F43;color:#fff;font-size:9px;font-weight:800;padding:3px 8px;border-radius:12px;margin-left:8px;letter-spacing:0.5px;vertical-align:middle;box-shadow:0 1px 3px rgba(255,159,67,0.3)">NEW</span>' : '';
+  var isNewBadge = v.isNew ? '<span style="background:#E74C3C;color:#fff;font-size:calc(10px * var(--font-scale));font-weight:800;padding:3px 8px;border-radius:12px;margin-left:8px;letter-spacing:0.5px;vertical-align:middle;box-shadow:0 1px 3px rgba(231,76,60,0.3)">NEW</span>' : '';
   
   return '<div style="padding:20px 16px; margin: 12px 0; background:' + colors.W + '; border-radius:16px; box-shadow: 0 4px 16px rgba(0,0,0,0.03); border: 1px solid ' + colors.B + '66; transition: transform 0.2s ease, box-shadow 0.2s ease;" onmouseover="this.style.transform=\'translateY(-2px)\';this.style.boxShadow=\'0 8px 24px rgba(0,0,0,0.06)\'" onmouseout="this.style.transform=\'translateY(0)\';this.style.boxShadow=\'0 4px 16px rgba(0,0,0,0.03)\'">'
     + '<div onclick="window.showDetail(' + v.id + ')" style="cursor:pointer">'
     + '<div style="display:flex;align-items:center;margin-bottom:12px;">'
-    + '  <div style="font-size:12px;font-weight:800;color:' + colors.N + ';background:' + colors.N + '1A;padding:4px 12px;border-radius:6px;letter-spacing:0.5px;">' + (c.label || "") + '</div>' + isNewBadge
+    + '  <div style="font-size:calc(13px * var(--font-scale));font-weight:800;color:' + colors.N + ';background:' + colors.N + '1A;padding:4px 12px;border-radius:6px;letter-spacing:0.5px;">' + (c.label || "") + '</div>' + isNewBadge
     + '</div>'
-    + '<div style="font-size:16px;font-weight:700;line-height:1.5;color:' + colors.T + ';margin-bottom:12px">' + esc(v.title) + playBtn + '</div>'
-    + '<div style="font-size:13px;font-weight:600;color:' + colors.M + '">' + esc(v.channel) + ' · ' + esc(v.views) + ' views</div>'
+    + '<div style="font-size:calc(18px * var(--font-scale));font-weight:700;line-height:1.4;color:' + colors.T + ';margin-bottom:12px">' + esc(v.title) + playBtn + '</div>'
+    + '<div style="font-size:calc(14px * var(--font-scale));font-weight:600;color:' + colors.M + '">' + esc(v.channel) + ' · ' + esc(v.views) + ' views</div>'
     + '</div></div>';
 }
 
@@ -884,26 +939,26 @@ function detailHTML(v, colors) {
   if (catKey && ICAO_ANALYSIS_PRESETS[catKey]) {
     icaoContent = icaoToHTML(ICAO_ANALYSIS_PRESETS[catKey], colors);
   } else {
-    icaoContent = '<div style="color:#D32F2F;font-size:15px;font-weight:600;padding:16px 0;text-align:center;background:' + colors.N + '11;border-radius:8px;">No pre-analyzed scenario available.</div>';
+    icaoContent = '<div style="color:#D32F2F;font-size:calc(16px * var(--font-scale));font-weight:600;padding:16px 0;text-align:center;background:' + colors.N + '11;border-radius:8px;">No pre-analyzed scenario available.</div>';
   }
 
   var playBtn = v.ytId
-    ? '<button onclick="window.openYoutube(\'' + esc(v.ytId) + '\');" style="display:inline-flex;align-items:center;justify-content:center;width:100%;gap:10px;background:' + colors.N + ';color:#fff;font-size:15px;font-weight:800;padding:16px;border-radius:12px;border:none;cursor:pointer;text-decoration:none;letter-spacing:1px;margin:24px 0 32px;box-shadow: 0 4px 14px ' + colors.N + '66;transition:transform 0.1s;">WATCH REAL ATC VIDEO</button>'
+    ? '<button onclick="window.openYoutube(\'' + esc(v.ytId) + '\');" style="display:inline-flex;align-items:center;justify-content:center;width:100%;gap:10px;background:' + colors.N + ';color:#fff;font-size:calc(16px * var(--font-scale));font-weight:800;padding:16px;border-radius:12px;border:none;cursor:pointer;text-decoration:none;letter-spacing:1px;margin:24px 0 32px;box-shadow: 0 4px 14px ' + colors.N + '66;transition:transform 0.1s;">WATCH REAL ATC VIDEO</button>'
     : '';
     
   return '<div style="padding-bottom:60px">'
-    + '<button onclick="window.setState({selected:null,_restoreY:state.scrollY||0});" style="display:flex;align-items:center;gap:8px;font-size:14px;color:' + colors.M + ';background:none;border:none;cursor:pointer;padding:16px 0;font-weight:800;letter-spacing:0.5px;transition:color 0.2s;" onmouseover="this.style.color=\'' + colors.N + '\'" onmouseout="this.style.color=\'' + colors.M + '\'">← BACK TO LIST</button>'
+    + '<button onclick="window.setState({selected:null,_restoreY:state.scrollY||0});" style="display:flex;align-items:center;gap:8px;font-size:calc(15px * var(--font-scale));color:' + colors.M + ';background:none;border:none;cursor:pointer;padding:16px 0;font-weight:800;letter-spacing:0.5px;transition:color 0.2s;" onmouseover="this.style.color=\'' + colors.N + '\'" onmouseout="this.style.color=\'' + colors.M + '\'">← BACK TO LIST</button>'
     
     + '<div style="background:' + colors.W + '; padding: 24px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid ' + colors.B + '66; margin-bottom: 32px;">'
-    + '<div style="display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:' + colors.N + ';background:' + colors.N + '1A;padding:4px 12px;border-radius:6px;margin-bottom:16px;letter-spacing:0.5px;">' + (c.label || "") + '</div>'
-    + '<div style="font-size:22px;font-weight:800;color:' + colors.T + ';line-height:1.4;margin-bottom:12px">' + esc(v.title) + '</div>'
-    + '<div style="font-size:14px;font-weight:600;color:' + colors.M + ';">' + esc(v.channel) + ' · ' + esc(v.views) + ' views</div>'
+    + '<div style="display:inline-flex;align-items:center;gap:6px;font-size:calc(13px * var(--font-scale));font-weight:800;color:' + colors.N + ';background:' + colors.N + '1A;padding:4px 12px;border-radius:6px;margin-bottom:16px;letter-spacing:0.5px;">' + (c.label || "") + '</div>'
+    + '<div style="font-size:calc(24px * var(--font-scale));font-weight:800;color:' + colors.T + ';line-height:1.4;margin-bottom:12px">' + esc(v.title) + '</div>'
+    + '<div style="font-size:calc(15px * var(--font-scale));font-weight:600;color:' + colors.M + ';">' + esc(v.channel) + ' · ' + esc(v.views) + ' views</div>'
     + '</div>'
     
     + playBtn
     
     + secLabel("SUMMARY", colors)
-    + a.summary.split("\n\n").map(function(p) { return '<p style="font-size:15px;line-height:1.8;color:' + colors.T + ';margin-bottom:16px;padding:0 8px;">' + esc(p) + '</p>'; }).join("")
+    + a.summary.split("\n\n").map(function(p) { return '<p style="font-size:calc(16px * var(--font-scale));line-height:1.8;color:' + colors.T + ';margin-bottom:16px;padding:0 8px;">' + esc(p) + '</p>'; }).join("")
     
     + secLabel("FAA Response Standards & Roles", colors)
     + rolesHTML(a.pilotRoles, a.atcRoles, colors)
@@ -917,7 +972,7 @@ function detailHTML(v, colors) {
     + '<div id="icao-body-' + v.id + '" style="background:' + colors.W + '; padding: 24px 20px; border-radius: 16px; box-shadow: 0 4px 20px rgba(0,0,0,0.03); border: 1px solid ' + colors.B + '66;">' + icaoContent + '</div>'
     
     + '<div style="margin-top: 48px; text-align:center;">'
-    + '<button onclick="window.setState({selected:null,_restoreY:state.scrollY||0});" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:15px;color:' + colors.W + ';background:' + colors.M + ';border:none;cursor:pointer;padding:14px 32px;border-radius:30px;font-weight:800;letter-spacing:1px;box-shadow: 0 4px 12px rgba(0,0,0,0.1);">RETURN TO LIST</button>'
+    + '<button onclick="window.setState({selected:null,_restoreY:state.scrollY||0});" style="display:inline-flex;align-items:center;justify-content:center;gap:8px;font-size:calc(16px * var(--font-scale));color:' + colors.W + ';background:' + colors.M + ';border:none;cursor:pointer;padding:14px 32px;border-radius:30px;font-weight:800;letter-spacing:1px;box-shadow: 0 4px 12px rgba(0,0,0,0.1);">RETURN TO LIST</button>'
     + '</div>'
     + '</div>';
 }
@@ -925,34 +980,47 @@ function detailHTML(v, colors) {
 function settingsHTML(colors) {
   var lastDate = state.lastUpdate > 0 ? new Date(state.lastUpdate).toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : "Never";
   return '<div style="padding-bottom:48px; padding-top: 16px;">'
-    + '<button onclick="window.setState({settingsOpen:false});" style="display:flex;align-items:center;gap:6px;font-size:15px;color:' + colors.M + ';background:none;border:none;cursor:pointer;padding:8px 0 24px;font-weight:800;letter-spacing:0.5px;">← CLOSE SETTINGS</button>'
+    + '<button onclick="window.setState({settingsOpen:false});" style="display:flex;align-items:center;gap:6px;font-size:calc(15px * var(--font-scale));color:' + colors.M + ';background:none;border:none;cursor:pointer;padding:8px 0 24px;font-weight:800;letter-spacing:0.5px;">← CLOSE SETTINGS</button>'
     
     + '<div style="background:' + colors.W + '; border-radius:16px; padding:24px; box-shadow:0 4px 20px rgba(0,0,0,0.03); border:1px solid ' + colors.B + '66; margin-bottom: 24px;">'
-    + '  <div style="font-size:16px;font-weight:800;color:' + colors.N + ';letter-spacing:1px;margin-bottom:20px;text-transform:uppercase;">THEME SETTINGS</div>'
-    + '  <div style="display:flex;justify-content:space-between;align-items:center;">'
+    + '  <div style="font-size:calc(17px * var(--font-scale));font-weight:800;color:' + colors.N + ';letter-spacing:1px;margin-bottom:20px;text-transform:uppercase;">DISPLAY SETTINGS</div>'
+    
+    // Theme Toggle
+    + '  <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:24px;padding-bottom:24px;border-bottom:1px solid ' + colors.B + ';">'
     + '    <div>'
-    + '      <div style="font-size:16px;font-weight:700;color:' + colors.T + ';">Dark Mode Theme</div>'
-    + '      <div style="font-size:13px;font-weight:500;color:' + colors.M + ';margin-top:4px;">Adjust interface for low-light cockpits</div>'
+    + '      <div style="font-size:calc(17px * var(--font-scale));font-weight:700;color:' + colors.T + ';">Dark Mode Theme</div>'
+    + '      <div style="font-size:calc(14px * var(--font-scale));font-weight:500;color:' + colors.M + ';margin-top:4px;">Adjust interface for low-light cockpits</div>'
     + '    </div>'
     + '    <label class="switch">'
     + '      <input type="checkbox" id="themeToggle" onchange="window.toggleTheme()" ' + (state.theme === 'dark' ? 'checked' : '') + ' />'
     + '      <span class="slider"></span>'
     + '    </label>'
     + '  </div>'
+
+    // Font Scale Buttons
+    + '  <div>'
+    + '    <div style="font-size:calc(17px * var(--font-scale));font-weight:700;color:' + colors.T + ';margin-bottom:4px;">Text Size</div>'
+    + '    <div style="font-size:calc(14px * var(--font-scale));font-weight:500;color:' + colors.M + ';margin-bottom:16px;">Adjust text size for better readability</div>'
+    + '    <div style="display:flex;gap:8px;">'
+    + '      <button onclick="window.setFontScale(0.9)" style="flex:1;padding:12px 0;background:' + (state.fontScale === 0.9 ? colors.N : colors.N+'1A') + ';color:' + (state.fontScale === 0.9 ? '#fff' : colors.N) + ';border:none;border-radius:10px;font-size:calc(14px * var(--font-scale));font-weight:800;cursor:pointer;transition:all 0.2s;">Small</button>'
+    + '      <button onclick="window.setFontScale(1.0)" style="flex:1;padding:12px 0;background:' + (state.fontScale === 1.0 ? colors.N : colors.N+'1A') + ';color:' + (state.fontScale === 1.0 ? '#fff' : colors.N) + ';border:none;border-radius:10px;font-size:calc(16px * var(--font-scale));font-weight:800;cursor:pointer;transition:all 0.2s;">Default</button>'
+    + '      <button onclick="window.setFontScale(1.15)" style="flex:1;padding:12px 0;background:' + (state.fontScale === 1.15 ? colors.N : colors.N+'1A') + ';color:' + (state.fontScale === 1.15 ? '#fff' : colors.N) + ';border:none;border-radius:10px;font-size:calc(18px * var(--font-scale));font-weight:800;cursor:pointer;transition:all 0.2s;">Large</button>'
+    + '    </div>'
+    + '  </div>'
     + '</div>'
 
     + '<div style="background:' + colors.W + '; border-radius:16px; padding:24px; box-shadow:0 4px 20px rgba(0,0,0,0.03); border:1px solid ' + colors.B + '66; margin-bottom: 24px;">'
-    + '  <div style="font-size:16px;font-weight:800;color:' + colors.N + ';letter-spacing:1px;margin-bottom:20px;text-transform:uppercase;">DATABASE MANAGEMENT</div>'
+    + '  <div style="font-size:calc(17px * var(--font-scale));font-weight:800;color:' + colors.N + ';letter-spacing:1px;margin-bottom:20px;text-transform:uppercase;">DATABASE MANAGEMENT</div>'
     + '  <div style="padding:16px;background:' + colors.N + '0A;border-radius:12px;border:1px dashed ' + colors.N + '44;margin-bottom:20px;">'
-    + '    <div style="font-size:15px;font-weight:700;color:' + colors.T + ';margin-bottom:6px;">YouTube Archive Sync</div>'
-    + '    <div style="font-size:14px;color:' + colors.M + ';">Last Sync Date: <strong style="color:' + colors.T + ';">' + lastDate + '</strong></div>'
+    + '    <div style="font-size:calc(16px * var(--font-scale));font-weight:700;color:' + colors.T + ';margin-bottom:6px;">YouTube Archive Sync</div>'
+    + '    <div style="font-size:calc(15px * var(--font-scale));color:' + colors.M + ';">Last Sync Date: <strong style="color:' + colors.T + ';">' + lastDate + '</strong></div>'
     + '  </div>'
-    + '  <button onclick="window.triggerManualUpdate()" style="background:' + colors.N + ';color:#fff;border:none;padding:14px 20px;border-radius:12px;font-size:14px;font-weight:800;letter-spacing:0.5px;cursor:pointer;width:100%;box-shadow:0 4px 12px ' + colors.N + '44;transition:transform 0.1s;">' + (state.updating ? "UPDATING ARCHIVE..." : "CHECK FOR UPDATES NOW") + '</button>'
+    + '  <button onclick="window.triggerManualUpdate()" style="background:' + colors.N + ';color:#fff;border:none;padding:14px 20px;border-radius:12px;font-size:calc(15px * var(--font-scale));font-weight:800;letter-spacing:0.5px;cursor:pointer;width:100%;box-shadow:0 4px 12px ' + colors.N + '44;transition:transform 0.1s;">' + (state.updating ? "UPDATING ARCHIVE..." : "CHECK FOR UPDATES NOW") + '</button>'
     + '</div>'
 
     + '<div style="background:' + colors.W + '; border-radius:16px; padding:24px; box-shadow:0 4px 20px rgba(0,0,0,0.03); border:1px solid ' + colors.B + '66;">'
-    + '  <div style="font-size:16px;font-weight:800;color:' + colors.N + ';letter-spacing:1px;margin-bottom:16px;text-transform:uppercase;">ABOUT</div>'
-    + '  <div style="font-size:15px;line-height:1.7;color:' + colors.T + ';display:flex;flex-direction:column;gap:16px;">'
+    + '  <div style="font-size:calc(17px * var(--font-scale));font-weight:800;color:' + colors.N + ';letter-spacing:1px;margin-bottom:16px;text-transform:uppercase;">ABOUT</div>'
+    + '  <div style="font-size:calc(16px * var(--font-scale));line-height:1.7;color:' + colors.T + ';display:flex;flex-direction:column;gap:16px;">'
     + '    <p>This emergency ATC database acts as a specialized training companion for commercial flight crews preparing for high-proficiency ICAO Level 6 examinations.</p>'
     + '    <p>All emergency scenarios and correction templates strictly adhere to US FAA Aeronautical Information Manual (AIM) communications standards.</p>'
     + '  </div>'
@@ -969,6 +1037,7 @@ window.render = function() {
   // Update dynamic CSS variables for theme switchers to render beautifully
   document.documentElement.style.setProperty('--primary-color', colors.N);
   document.documentElement.style.setProperty('--border-color', colors.B);
+  document.documentElement.style.setProperty('--font-scale', state.fontScale);
   document.body.style.background = colors.G;
   document.body.style.color = colors.T;
 
@@ -981,29 +1050,29 @@ window.render = function() {
   var lastDate = s.lastUpdate > 0 ? new Date(s.lastUpdate).toLocaleDateString("en-US", { year: 'numeric', month: 'short', day: 'numeric' }) : "Never";
   var html = "";
 
-  // Upper Navigation Header (More airy and modern)
+  // Upper Navigation Header
   html += '<div style="background:' + colors.W + ';padding:0 16px;position:fixed;top:0;left:0;right:0;max-width:480px;margin:0 auto;z-index:30;box-shadow: 0 1px 12px rgba(0,0,0,0.04); border-bottom: 1px solid ' + colors.B + '44;">'
     + '<div style="display:flex;align-items:center;justify-content:space-between;height:64px">'
-    + '<button onclick="window.setState({showSearch:!state.showSearch,settingsOpen:false})" style="background:none;border:none;cursor:pointer;color:' + colors.N + ';font-size:13px;font-weight:800;padding:8px;letter-spacing:0.5px;">SEARCH</button>'
+    + '<button onclick="window.setState({showSearch:!state.showSearch,settingsOpen:false})" style="background:none;border:none;cursor:pointer;color:' + colors.N + ';font-size:calc(14px * var(--font-scale));font-weight:800;padding:8px;letter-spacing:0.5px;">SEARCH</button>'
     + '<div onclick="window.setState({cat:\'all\',selected:null,search:\'\',showSearch:false,settingsOpen:false});window.scrollTo({top:0,behavior:\'smooth\'});" style="display:flex;flex-direction:column;align-items:center;cursor:pointer">'
-    + '<span style="font-size:17px;font-weight:800;color:' + colors.T + ';letter-spacing:0.5px">ATC Emergency</span>'
-    + '<span style="font-size:10px;font-weight:600;color:' + colors.M + ';letter-spacing:0.5px;margin-top:2px;">ARCHIVE</span>'
+    + '<span style="font-size:calc(18px * var(--font-scale));font-weight:800;color:' + colors.T + ';letter-spacing:0.5px">ATC Emergency</span>'
+    + '<span style="font-size:calc(11px * var(--font-scale));font-weight:600;color:' + colors.M + ';letter-spacing:0.5px;margin-top:2px;">ARCHIVE</span>'
     + '</div>'
-    + '<button onclick="window.setState({settingsOpen:!state.settingsOpen,menuOpen:false})" style="background:none;border:none;cursor:pointer;color:' + colors.N + ';font-size:13px;font-weight:800;padding:8px;letter-spacing:0.5px;">MENU</button>'
+    + '<button onclick="window.setState({settingsOpen:!state.settingsOpen,menuOpen:false})" style="background:none;border:none;cursor:pointer;color:' + colors.N + ';font-size:calc(14px * var(--font-scale));font-weight:800;padding:8px;letter-spacing:0.5px;">SETTINGS</button>'
     + '</div></div>';
 
   // Category Dropdown Selection Menu
   if (s.menuOpen) {
     html += '<div onclick="window.setState({menuOpen:false})" style="position:fixed;inset:0;z-index:24;background:rgba(16,24,32,0.2);backdrop-filter:blur(2px);"></div>'
       + '<div style="position:fixed;top:64px;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:' + colors.W + ';z-index:25;box-shadow:0 8px 32px rgba(0,0,0,0.08);border-bottom-left-radius:24px;border-bottom-right-radius:24px;overflow:hidden;padding-bottom:16px;">'
-      + '<div style="padding: 16px 20px 8px; font-size:12px; font-weight:800; color:' + colors.M + '; letter-spacing:1px;">SELECT CATEGORY</div>'
+      + '<div style="padding: 16px 20px 8px; font-size:calc(13px * var(--font-scale)); font-weight:800; color:' + colors.M + '; letter-spacing:1px;">SELECT CATEGORY</div>'
       + '<div style="max-height: 60vh; overflow-y: auto;">'
       + CATEGORIES.map(function(c, i) {
         var active = s.cat === c.id;
         var bgCol = active ? colors.N + "1A" : "transparent";
         var textCol = active ? colors.N : colors.T;
         return '<button onclick="window.setState({cat:\'' + c.id + '\',menuOpen:false,selected:null,settingsOpen:false})" '
-          + 'style="display:flex;align-items:center;gap:12px;width:calc(100% - 32px);margin:4px 16px;padding:14px 20px;background:' + bgCol + ';color:' + textCol + ';border:none;border-radius:12px;cursor:pointer;text-align:left;font-size:15px;font-weight:' + (active ? 800 : 600) + '; transition: background 0.2s;">'
+          + 'style="display:flex;align-items:center;gap:12px;width:calc(100% - 32px);margin:4px 16px;padding:14px 20px;background:' + bgCol + ';color:' + textCol + ';border:none;border-radius:12px;cursor:pointer;text-align:left;font-size:calc(16px * var(--font-scale));font-weight:' + (active ? 800 : 600) + '; transition: background 0.2s;">'
           + '<span>' + c.label + '</span>'
           + (active ? '<div style="margin-left:auto;width:8px;height:8px;border-radius:50%;background:' + colors.N + ';flex-shrink:0"></div>' : '')
           + '</button>';
@@ -1015,9 +1084,9 @@ window.render = function() {
   if (s.showSearch) {
     html += '<div style="background:' + colors.W + ';padding:16px;border-bottom:1px solid ' + colors.B + '44;position:fixed;top:64px;left:0;right:0;max-width:480px;margin:0 auto;z-index:24;box-shadow:0 4px 16px rgba(0,0,0,0.03);">'
       + '<div style="background:' + colors.G + ';border-radius:12px;padding:12px 16px;display:flex;align-items:center;gap:12px;border:1px solid ' + colors.B + '">'
-      + '<span style="font-size:14px;font-weight:800;color:' + colors.N + '">SEARCH</span>'
-      + '<input id="searchInput" value="' + esc(s.search) + '" oninput="window.setState({search:this.value})" placeholder="Type to search..." style="flex:1;background:none;border:none;outline:none;color:' + colors.T + ';font-size:15px;font-weight:500;" autofocus/>'
-      + (s.search ? '<button onclick="window.setState({search:\'\'})" style="background:none;border:none;color:' + colors.M + ';cursor:pointer;font-size:18px;font-weight:800;padding:0">✕</button>' : '')
+      + '<span style="font-size:calc(15px * var(--font-scale));font-weight:800;color:' + colors.N + '">SEARCH</span>'
+      + '<input id="searchInput" value="' + esc(s.search) + '" oninput="window.setState({search:this.value})" placeholder="Type to search..." style="flex:1;background:none;border:none;outline:none;color:' + colors.T + ';font-size:calc(16px * var(--font-scale));font-weight:500;" autofocus/>'
+      + (s.search ? '<button onclick="window.setState({search:\'\'})" style="background:none;border:none;color:' + colors.M + ';cursor:pointer;font-size:calc(19px * var(--font-scale));font-weight:800;padding:0">✕</button>' : '')
       + '</div></div>';
   }
 
@@ -1032,15 +1101,15 @@ window.render = function() {
     // Elegant Category Indicator on Home
     html += '<div style="display:flex;align-items:center;justify-content:space-between;padding: 24px 4px 16px;">'
       + '<div>'
-      + '<div style="font-size:24px;font-weight:800;color:' + colors.T + ';letter-spacing:-0.5px;">' + (activeCat.label || "All Categories") + '</div>'
-      + '<div style="font-size:13px;font-weight:600;color:' + colors.M + ';margin-top:6px;">' + filtered.length + ' emergency recordings</div>'
+      + '<div style="font-size:calc(26px * var(--font-scale));font-weight:800;color:' + colors.T + ';letter-spacing:-0.5px;">' + (activeCat.label || "All Categories") + '</div>'
+      + '<div style="font-size:calc(14px * var(--font-scale));font-weight:600;color:' + colors.M + ';margin-top:6px;">' + filtered.length + ' emergency recordings</div>'
       + '</div>'
-      + '<button onclick="window.setState({menuOpen:!state.menuOpen,settingsOpen:false})" style="background:' + colors.N + '1A;border:none;color:' + colors.N + ';font-size:13px;font-weight:800;padding:10px 16px;border-radius:12px;cursor:pointer;letter-spacing:0.5px;">FILTER</button>'
+      + '<button onclick="window.setState({menuOpen:!state.menuOpen,settingsOpen:false})" style="background:' + colors.N + '1A;border:none;color:' + colors.N + ';font-size:calc(14px * var(--font-scale));font-weight:800;padding:10px 16px;border-radius:12px;cursor:pointer;letter-spacing:0.5px;">FILTER</button>'
       + '</div>';
       
     html += '<div style="flex:1;">'
       + filtered.map(function(v) { return cardHTML(v, colors); }).join("")
-      + (filtered.length === 0 ? '<div style="text-align:center;padding:100px 0;color:' + colors.M + ';font-size:16px;font-weight:600;">No matching recordings found.</div>' : '')
+      + (filtered.length === 0 ? '<div style="text-align:center;padding:100px 0;color:' + colors.M + ';font-size:calc(17px * var(--font-scale));font-weight:600;">No matching recordings found.</div>' : '')
       + '</div>';
   }
   html += '</div>';
